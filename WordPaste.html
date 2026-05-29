@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 回覆模擬器｜Word 貼入練習</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg: #f5f3ee;
+    --panel: #ffffff;
+    --ai-bg: #f0f7ff;
+    --ai-border: #b8d4f0;
+    --header-bg: #1a2a3a;
+    --accent: #2563eb;
+    --accent2: #16a34a;
+    --warn: #d97706;
+    --text: #1e293b;
+    --muted: #64748b;
+    --tag-bg: #e2e8f0;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--header-bg);
+    color: #fff;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .header-logo {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .header-title { font-size: 1rem; font-weight: 700; letter-spacing: .04em; }
+  .header-sub { font-size: .75rem; color: #94a3b8; margin-top: 2px; }
+  .header-badge {
+    margin-left: auto;
+    background: #ef4444;
+    color: #fff;
+    font-size: .7rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: .05em;
+  }
+
+  /* ── Layout ── */
+  .layout {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  /* ── Instruction Banner ── */
+  .instruction {
+    background: #fffbeb;
+    border: 1.5px solid #fbbf24;
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    font-size: .88rem;
+    line-height: 1.7;
+  }
+  .instruction strong { color: #92400e; }
+  .steps { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .step-tag {
+    background: #fef3c7;
+    border: 1px solid #fbbf24;
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: .8rem;
+    font-weight: 500;
+    color: #78350f;
+  }
+
+  /* ── AI Response Panel ── */
+  .ai-panel {
+    background: var(--ai-bg);
+    border: 1.5px solid var(--ai-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .ai-topbar {
+    background: #dbeafe;
+    border-bottom: 1px solid var(--ai-border);
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: .82rem;
+    color: #1e40af;
+    font-weight: 600;
+  }
+  .ai-dot { width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; }
+
+  /* ── The AI Content (this is what students copy) ── */
+  .ai-content {
+    padding: 24px 28px;
+    font-size: .93rem;
+    line-height: 1.9;
+    white-space: pre-wrap;
+    font-family: 'Noto Sans TC', sans-serif;
+    user-select: text;
+    cursor: text;
+    color: #1e293b;
+  }
+
+  /* ── Action Bar ── */
+  .action-bar {
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+  }
+  .action-label {
+    font-size: .82rem;
+    color: var(--muted);
+    font-weight: 500;
+    margin-right: 4px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-size: .88rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all .18s;
+    font-family: inherit;
+    letter-spacing: .02em;
+  }
+  .btn-copy {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-copy:hover { background: #1d4ed8; transform: translateY(-1px); }
+  .btn-download {
+    background: var(--accent2);
+    color: #fff;
+  }
+  .btn-download:hover { background: #15803d; transform: translateY(-1px); }
+  .btn-reset {
+    background: var(--tag-bg);
+    color: var(--text);
+  }
+  .btn-reset:hover { background: #cbd5e1; }
+
+  .copy-success {
+    font-size: .82rem;
+    color: var(--accent2);
+    font-weight: 600;
+    display: none;
+    animation: fadeIn .3s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform: translateX(-6px); } to { opacity:1; transform: none; } }
+
+  /* ── Hints Panel ── */
+  .hints {
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+  }
+  .hints-title {
+    font-size: .9rem;
+    font-weight: 700;
+    color: #7c3aed;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hint-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+  }
+  .hint-card {
+    background: #faf5ff;
+    border: 1px solid #e9d5ff;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: .82rem;
+    line-height: 1.6;
+  }
+  .hint-card strong { color: #6d28d9; font-size: .8rem; display: block; margin-bottom: 4px; }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    font-size: .75rem;
+    color: var(--muted);
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">🤖</div>
+  <div>
+    <div class="header-title">AI 回覆模擬器</div>
+    <div class="header-sub">Word 文書 AI 化｜貼入練習教學工具</div>
+  </div>
+  <div class="header-badge">課堂練習專用</div>
+</div>
+
+<div class="layout">
+
+  <!-- 操作說明 -->
+  <div class="instruction">
+    <strong>📋 練習說明：</strong>這是一份模擬 AI 回覆的成果報告文稿。<br>
+    請依照下方步驟操作，體驗 AI 內容貼入 Word 後常見的排版問題，再跟著老師一起修正。
+    <div class="steps">
+      <span class="step-tag">① 點選「複製全文」</span>
+      <span class="step-tag">② 開啟 Word 新文件</span>
+      <span class="step-tag">③ 直接 Ctrl+V 貼上</span>
+      <span class="step-tag">④ 觀察發生了哪些問題</span>
+      <span class="step-tag">⑤ 或點「下載 Word 檔」取得已亂掉的範本</span>
+    </div>
+  </div>
+
+  <!-- AI 回覆區 -->
+  <div class="ai-panel">
+    <div class="ai-topbar">
+      <div class="ai-dot"></div>
+      AI 回覆內容（模擬 ChatGPT / Gemini 輸出格式）
+    </div>
+    <div class="ai-content" id="aiContent">
+# 2024 年度客戶服務部門工作成果報告
+
+**版本：** v1.0　　**製作日期：** 2025 年 1 月　　**製作單位：** 客戶服務部
+
+---
+
+## 一、部門年度目標與達成概況
+
+本部門於 2024 年度以「提升服務品質、縮短回應時間、強化跨部門協作」為三大核心目標，全年共執行 12 項專案，完成率達 91.7%，較 2023 年提升 8.3 個百分點。
+
+整體服務滿意度調查結果顯示，客戶綜合滿意度從年初的 82% 提升至年末的 89%，達成年度設定目標（85%）並超出 4 個百分點。
+
+---
+
+## 二、重點工作項目說明
+
+### （一）客服流程優化專案
+
+本專案自 2024 年 3 月啟動，歷時六個月，主要目標為縮短客戶等待時間與提升問題首次解決率。
+
+主要執行內容如下：
+- 導入線上工單系統，取代原有電話紙本記錄方式
+  - 工單系統上線後，平均處理時間由 48 小時縮短至 18 小時
+  - 系統整合 CRM 資料，客服人員可即時查詢客戶歷史紀錄
+  - 首次解決率（FCR）從 67% 提升至 79%，超出目標值 5%
+- 建立標準化回應話術庫，共收錄 120 組常見問題範本
+  - 話術庫分為「產品諮詢」、「帳務問題」、「技術支援」三大類別
+  - 每季進行內容審查與更新，確保資訊正確性
+  - 新進人員培訓時間平均縮短 30%
+- 設立「VIP 客戶專屬通道」，提供優先服務機制
+  - VIP 客戶平均等待時間控制在 5 分鐘以內
+  - 本年度 VIP 客戶續約率達 94%
+
+### （二）員工培訓與職能提升計畫
+
+為因應業務擴張需求，本年度共辦理 8 場內部培訓，受訓人次達 143 人次，課程涵蓋以下主題：
+- 溝通技巧與衝突處理（共 3 場）
+  - 邀請外部顧問講師主講，課後滿意度均達 90% 以上
+  - 實施角色扮演演練，強化實戰應用能力
+- 產品知識更新培訓（共 3 場）
+  - 配合新產品上市節奏，及時同步最新資訊
+  - 培訓後設有線上測驗，通過率 88%
+- 系統操作與數位工具應用（共 2 場）
+  - 包含工單系統、CRM 平台及報表工具操作訓練
+  - 訓練後員工操作效率平均提升 22%
+
+---
+
+## 三、量化績效彙整表
+
+以下為本年度各項關鍵績效指標（KPI）彙整，供主管參閱：
+
+| 指標名稱 | 2023 年實績 | 2024 年目標 | 2024 年實績 | 達成率 |
+| --- | --- | --- | --- | --- |
+| 客戶滿意度（CSAT） | 82% | 85% | 89% | 104.7% |
+| 首次解決率（FCR） | 67% | 74% | 79% | 106.8% |
+| 平均處理時間 | 48 小時 | 24 小時 | 18 小時 | 133.3% |
+| 員工培訓完成率 | 76% | 90% | 92% | 102.2% |
+| VIP 客戶續約率 | 89% | 92% | 94% | 102.2% |
+
+---
+
+## 四、待改善事項與 2025 年規劃重點
+
+雖然本年度整體表現良好，仍有若干事項需持續改善：
+
+**（一）夜間服務覆蓋不足**
+目前夜間（22:00–08:00）僅有自動回覆機制，缺乏真人客服支援。建議 2025 年評估外包夜班客服或導入 AI 智能客服機器人，以彌補此服務缺口。
+
+**（二）跨部門協作效率仍有提升空間**
+部分涉及技術部門的客訴案件，跨部門轉介流程平均需 3 個工作天，影響客戶體驗。建議建立跨部門 SLA（服務水準協議），明訂各類案件的轉介與回覆時限。
+
+**（三）2025 年三大優先目標**
+- 導入 AI 客服輔助系統，目標將 FCR 進一步提升至 85%
+- 建立夜間服務機制，全年服務可用率達 95% 以上
+- 推動客服數據儀表板，實現即時績效監控與主管快速決策
+</div>
+  </div>
+
+  <!-- 操作按鈕列 -->
+  <div class="action-bar">
+    <span class="action-label">操作：</span>
+    <button class="btn btn-copy" onclick="copyContent()">
+      📋 複製全文（Ctrl+C 後貼入 Word）
+    </button>
+    <button class="btn btn-download" onclick="downloadWord()">
+      📄 下載練習用 Word 檔
+    </button>
+    <button class="btn btn-reset" onclick="resetCopy()">
+      ↺ 重置
+    </button>
+    <span class="copy-success" id="copyMsg">✅ 已複製！請開啟 Word 按 Ctrl+V 貼上</span>
+  </div>
+
+  <!-- 貼入後會遇到的問題提示 -->
+  <div class="hints">
+    <div class="hints-title">
+      🔍 貼入 Word 後，請觀察這些問題
+    </div>
+    <div class="hint-grid">
+      <div class="hint-card">
+        <strong>問題 ① 段落空白行</strong>
+        每個段落之間出現多行空白，或標題前後空很多，整體文件太長。
+      </div>
+      <div class="hint-card">
+        <strong>問題 ② 強制換行符號</strong>
+        顯示/隱藏標記後，可看見「↵」強制換行，與正常段落符號「¶」不同。
+      </div>
+      <div class="hint-card">
+        <strong>問題 ③ 項目符號縮排亂</strong>
+        二層項目條例（子項目）縮排不整齊，序號與文字距離不一致。
+      </div>
+      <div class="hint-card">
+        <strong>問題 ④ 表格變成文字</strong>
+        KPI 彙整表貼入後不是表格，而是用「|」分隔的一行行文字。
+      </div>
+      <div class="hint-card">
+        <strong>問題 ⑤ 表格雙框線</strong>
+        若表格有貼進來，儲存格可能出現雙框線，或框線粗細不一致。
+      </div>
+      <div class="hint-card">
+        <strong>問題 ⑥ # 標題符號殘留</strong>
+        Markdown 的 #、## 符號直接出現在文字前，沒有變成 Word 標題樣式。
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">本頁面為教學用途模擬工具，內容為虛構示範資料</div>
+
+</div>
+
+<script>
+// ── 複製功能 ──
+function copyContent() {
+  const content = document.getElementById('aiContent').innerText;
+  navigator.clipboard.writeText(content).then(() => {
+    const msg = document.getElementById('copyMsg');
+    msg.style.display = 'inline';
+    setTimeout(() => { msg.style.display = 'none'; }, 4000);
+  }).catch(() => {
+    // fallback
+    const el = document.getElementById('aiContent');
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('copy');
+    sel.removeAllRanges();
+    const msg = document.getElementById('copyMsg');
+    msg.style.display = 'inline';
+    setTimeout(() => { msg.style.display = 'none'; }, 4000);
+  });
+}
+
+function resetCopy() {
+  document.getElementById('copyMsg').style.display = 'none';
+}
+
+// ── 下載 Word（實際為 .doc HTML 格式，Word 可直接開啟） ──
+function downloadWord() {
+  const rawText = document.getElementById('aiContent').innerText;
+
+  // 把 Markdown 原文直接塞進 Word HTML，刻意保留問題
+  const wordHtml = `
+<html xmlns:o='urn:schemas-microsoft-com:office:office'
+      xmlns:w='urn:schemas-microsoft-com:office:word'
+      xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset='utf-8'>
+<title>年度成果報告_練習用</title>
+<!--[if gte mso 9]>
+<xml><w:WordDocument><w:View>Normal</w:View></w:WordDocument></xml>
+<![endif]-->
+<style>
+  body { font-family: 'Microsoft JhengHei', sans-serif; font-size: 12pt; line-height: 2; }
+</style>
+</head>
+<body>
+<pre style="font-family:'Microsoft JhengHei',sans-serif; font-size:12pt; white-space:pre-wrap; line-height:2;">${rawText.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+</body>
+</html>`;
+
+  const blob = new Blob([wordHtml], { type: 'application/msword;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '年度成果報告_AI貼入練習.doc';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
