@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 短影音分鏡引導工具</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --indigo:       #3D5A99;
+  --indigo-mid:   #4F6EAE;
+  --indigo-light: #E8EDF6;
+  --indigo-dark:  #2A3F6F;
+  --cream:        #F8F6F1;
+  --cream2:       #F0EDE5;
+  --cream3:       #E4E0D5;
+  --white:        #FFFFFF;
+  --text:         #43413c;
+  --text-muted:   #6B6760;
+  --text-light:   #A09D97;
+  --border:       #DDD9CF;
+  --border-dark:  #C8C3B8;
+  --shadow:       0 1px 4px rgba(0,0,0,0.08);
+  --radius:       8px;
+  --font:         'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  --green:        #2E7D5E;
+  --green-light:  #E6F4EF;
+  --green-dark:   #1A5C43;
+  --amber:        #B45309;
+  --amber-light:  #FEF3C7;
+  --step-active:  #3D5A99;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--text);
+  background: var(--cream);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ===== NAV ===== */
+nav {
+  height: 64px;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  box-shadow: var(--shadow);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.nav-logo {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--indigo-dark);
+  padding: 6px;
+  flex-shrink: 0;
+  background: var(--indigo-light);
+}
+
+.nav-logo svg { width: 20px; height: 20px; }
+
+.nav-text { display: flex; flex-direction: column; }
+.nav-title { font-size: 1.1em; font-weight: 700; color: var(--indigo-dark); line-height: 1.2; }
+.nav-sub   { font-size: 12px; color: var(--text-muted); line-height: 1.2; }
+
+.nav-links { display: flex; gap: 6px; }
+.nav-links a {
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  color: var(--text-muted);
+  border-color: var(--border);
+  background: var(--cream);
+}
+.nav-links a.active {
+  background: var(--indigo);
+  color: #fff;
+  border-color: var(--indigo);
+}
+.nav-links a:not(.active):hover {
+  background: var(--indigo-light);
+  color: var(--indigo-dark);
+  border-color: var(--indigo-mid);
+}
+
+/* ===== MAIN LAYOUT ===== */
+.main-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: calc(100vh - 64px);
+}
+
+/* ===== LEFT SIDEBAR (步驟導覽) ===== */
+.sidebar {
+  background: var(--white);
+  border-right: 1px solid var(--border);
+  padding: 20px 0;
+  position: sticky;
+  top: 64px;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+
+.sidebar-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-light);
+  padding: 0 16px 8px;
+}
+
+.topic-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 12px 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.topic-btn {
+  padding: 7px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--cream);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+.topic-btn.active {
+  background: var(--indigo);
+  color: #fff;
+  border-color: var(--indigo);
+}
+.topic-btn:not(.active):hover {
+  background: var(--indigo-light);
+  color: var(--indigo-dark);
+  border-color: var(--indigo-mid);
+}
+.topic-btn .topic-emoji { margin-right: 6px; }
+
+.step-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 8px; }
+
+.step-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.step-nav-item:hover { background: var(--cream); }
+.step-nav-item.active {
+  background: var(--indigo-light);
+  color: var(--indigo-dark);
+}
+.step-nav-item.teacher-item { color: var(--green-dark); }
+.step-nav-item.teacher-item.active { background: var(--green-light); }
+
+.step-dot {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--cream3);
+  color: var(--text-light);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.step-nav-item.active .step-dot {
+  background: var(--indigo);
+  color: #fff;
+}
+.step-nav-item.teacher-item .step-dot {
+  background: var(--green-light);
+  color: var(--green-dark);
+}
+.step-nav-item.teacher-item.active .step-dot {
+  background: var(--green);
+  color: #fff;
+}
+
+.step-nav-label { font-size: 12px; line-height: 1.3; }
+.step-nav-sub { font-size: 11px; color: var(--text-light); }
+
+.sidebar-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 12px 16px;
+}
+
+/* ===== CONTENT AREA ===== */
+.content-area {
+  padding: 0;
+}
+
+.page-section {
+  display: none;
+  padding: 28px 32px 40px;
+  max-width: 860px;
+}
+.page-section.active { display: block; }
+
+/* ===== SECTION HEADER ===== */
+.section-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--indigo-light);
+}
+
+.section-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--indigo-light);
+  color: var(--indigo-dark);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+.section-badge.teacher-badge {
+  background: var(--green-light);
+  color: var(--green-dark);
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--indigo-dark);
+  margin-bottom: 6px;
+}
+.section-title.teacher-title { color: var(--green-dark); }
+
+.section-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ===== FORM BLOCKS ===== */
+.form-block {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+
+.form-block-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--indigo-dark);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-block-title .num-badge {
+  width: 20px; height: 20px;
+  background: var(--indigo);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.form-row.single { grid-template-columns: 1fr; }
+.form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+
+.field-hint {
+  font-size: 11px;
+  color: var(--text-light);
+  margin-bottom: 5px;
+}
+
+.styled-select, .styled-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--cream);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  transition: border-color 0.15s;
+}
+.styled-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B6760' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+  cursor: pointer;
+}
+.styled-select:focus, .styled-input:focus {
+  outline: none;
+  border-color: var(--indigo-mid);
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--cream);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.chip:hover { border-color: var(--indigo-mid); color: var(--indigo-dark); background: var(--indigo-light); }
+.chip.selected { background: var(--indigo); color: #fff; border-color: var(--indigo); }
+
+/* ===== PROMPT OUTPUT ===== */
+.prompt-output {
+  background: var(--indigo-dark);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.prompt-output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(255,255,255,0.07);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.prompt-output-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 0.5px;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.8);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.15s;
+}
+.copy-btn:hover { background: rgba(255,255,255,0.15); }
+.copy-btn.copied { background: var(--green); border-color: var(--green); color: #fff; }
+
+.prompt-text {
+  padding: 16px;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: #E8EDF6;
+  white-space: pre-wrap;
+  font-family: 'Noto Sans TC', monospace;
+}
+
+/* ===== GENERATE BUTTON ===== */
+.generate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  background: var(--indigo);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 12px;
+}
+.generate-btn:hover { background: var(--indigo-dark); }
+.generate-btn:active { transform: scale(0.99); }
+
+/* ===== INFO BOX ===== */
+.info-box {
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+.info-box.blue { background: var(--indigo-light); border: 1px solid #C5D0E8; color: var(--indigo-dark); }
+.info-box.green { background: var(--green-light); border: 1px solid #A7D7C5; color: var(--green-dark); }
+.info-box.amber { background: var(--amber-light); border: 1px solid #FCD34D; color: var(--amber); }
+
+.info-box strong { font-weight: 700; }
+
+/* ===== TABLE ===== */
+.storyboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  margin-bottom: 16px;
+  background: var(--white);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.storyboard-table th {
+  background: var(--indigo-dark);
+  color: #fff;
+  padding: 9px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+.storyboard-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  line-height: 1.6;
+}
+.storyboard-table tr:last-child td { border-bottom: none; }
+.storyboard-table tr:nth-child(even) td { background: var(--cream); }
+
+.scene-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; height: 26px;
+  background: var(--indigo);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ===== STEP NAV BUTTONS ===== */
+.step-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-next {
+  padding: 10px 24px;
+  background: var(--indigo);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-next:hover { background: var(--indigo-dark); }
+
+.btn-back {
+  padding: 10px 20px;
+  background: var(--cream);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-back:hover { background: var(--cream2); }
+
+/* ===== TEACHER PAGE ===== */
+.teacher-section-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--green-light);
+}
+
+.teacher-log-area {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.teacher-log-header {
+  background: var(--green-dark);
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.teacher-log-textarea {
+  width: 100%;
+  min-height: 220px;
+  padding: 14px 16px;
+  border: none;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.7;
+  resize: vertical;
+  background: #fff;
+}
+.teacher-log-textarea:focus { outline: none; }
+
+/* ===== PROGRESS INDICATOR ===== */
+.progress-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 80px;
+  position: relative;
+}
+
+.progress-step::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--border);
+  z-index: 0;
+}
+.progress-step:last-child::before { display: none; }
+.progress-step.done::before { background: var(--indigo); }
+
+.progress-circle {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--cream3);
+  color: var(--text-light);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  z-index: 1;
+  border: 2px solid var(--border);
+  transition: all 0.2s;
+}
+.progress-step.active .progress-circle {
+  background: var(--indigo);
+  color: #fff;
+  border-color: var(--indigo);
+}
+.progress-step.done .progress-circle {
+  background: var(--indigo-light);
+  color: var(--indigo);
+  border-color: var(--indigo);
+}
+
+.progress-label {
+  font-size: 10px;
+  color: var(--text-light);
+  margin-top: 5px;
+  text-align: center;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.progress-step.active .progress-label { color: var(--indigo-dark); font-weight: 600; }
+
+/* ===== SCROLLBAR ===== */
+.sidebar::-webkit-scrollbar { width: 5px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--cream3); border-radius: 3px; }
+
+.content-area::-webkit-scrollbar { width: 6px; }
+.content-area::-webkit-scrollbar-track { background: transparent; }
+.content-area::-webkit-scrollbar-thumb { background: var(--cream3); border-radius: 3px; }
+
+/* ===== PROMPT 複製區塊 ===== */
+.prompt-wrapper { position: relative; }
+
+.prompt-editable {
+  width: 100%;
+  min-height: 140px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 12.5px;
+  color: var(--text);
+  line-height: 1.8;
+  resize: vertical;
+  background: var(--cream);
+  margin-bottom: 8px;
+}
+.prompt-editable:focus { outline: none; border-color: var(--indigo-mid); }
+
+.copy-success-toast {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--indigo-dark);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Step 3 image upload area */
+.upload-area {
+  border: 2px dashed var(--border-dark);
+  border-radius: var(--radius);
+  padding: 28px;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 13px;
+  background: var(--cream);
+  margin-bottom: 12px;
+}
+
+.tool-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-right: 4px;
+}
+.tool-gemini { background: #E8F0FE; color: #1967D2; }
+.tool-kling  { background: #FEE8E8; color: #C62828; }
+.tool-veo    { background: #E8F5E9; color: #2E7D32; }
+.tool-capcut { background: #FFF3E0; color: #E65100; }
+</style>
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav>
+  <a class="nav-brand" href="index.html">
+    <div class="nav-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#3D5A99" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="3" width="20" height="14" rx="2"/>
+        <path d="M8 21h8M12 17v4"/>
+        <path d="M7 8l2 2 4-4 2 2"/>
+      </svg>
+    </div>
+    <div class="nav-text">
+      <span class="nav-title">AI 短影音分鏡引導工具</span>
+      <span class="nav-sub">心怡｜zoego99@gmail.com</span>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a href="index.html" class="active">分鏡製作流程</a>
+  </div>
+</nav>
+
+<!-- ===== MAIN LAYOUT ===== -->
+<div class="main-layout">
+
+  <!-- ===== SIDEBAR ===== -->
+  <div class="sidebar">
+    <div class="sidebar-section-label" style="margin-bottom:6px;">選擇主題情境</div>
+    <div class="topic-switcher">
+      <button class="topic-btn active" data-topic="phone" onclick="switchTopic('phone', this)">
+        <span class="topic-emoji">📱</span>手機使用禮儀
+      </button>
+      <button class="topic-btn" data-topic="fraud" onclick="switchTopic('fraud', this)">
+        <span class="topic-emoji">🛡️</span>防詐騙宣導
+      </button>
+    </div>
+
+    <div class="sidebar-section-label">製作流程</div>
+    <div class="step-nav">
+      <!-- <button class="step-nav-item teacher-item active" data-step="teacher" onclick="goToStep('teacher', this)">
+        <div class="step-dot">👩‍🏫</div>
+        <div>
+          <div class="step-nav-label">老師示範頁</div>
+          <div class="step-nav-sub">工作流程參考</div>
+        </div>
+      </button>
+
+      <hr class="sidebar-divider"> -->
+
+      <button class="step-nav-item" data-step="step0" onclick="goToStep('step0', this)">
+        <div class="step-dot">0</div>
+        <div>
+          <div class="step-nav-label">前期設定</div>
+          <div class="step-nav-sub">填入影片基本資訊</div>
+        </div>
+      </button>
+      <button class="step-nav-item" data-step="step1" onclick="goToStep('step1', this)">
+        <div class="step-dot">1</div>
+        <div>
+          <div class="step-nav-label">故事骨架</div>
+          <div class="step-nav-sub">取得分鏡腳本</div>
+        </div>
+      </button>
+      <button class="step-nav-item" data-step="step2" onclick="goToStep('step2', this)">
+        <div class="step-dot">2</div>
+        <div>
+          <div class="step-nav-label">生圖 Prompt</div>
+          <div class="step-nav-sub">中文，去 Gemini 生圖</div>
+        </div>
+      </button>
+      <button class="step-nav-item" data-step="step3" onclick="goToStep('step3', this)">
+        <div class="step-dot">3</div>
+        <div>
+          <div class="step-nav-label">圖片確認</div>
+          <div class="step-nav-sub">請 AI 審核分鏡圖</div>
+        </div>
+      </button>
+      <button class="step-nav-item" data-step="step4" onclick="goToStep('step4', this)">
+        <div class="step-dot">4</div>
+        <div>
+          <div class="step-nav-label">生影 Prompt</div>
+          <div class="step-nav-sub">Veo 中文 ／ Kling 英文</div>
+        </div>
+      </button>
+      <button class="step-nav-item" data-step="step5" onclick="goToStep('step5', this)">
+        <div class="step-dot">5</div>
+        <div>
+          <div class="step-nav-label">剪輯組合</div>
+          <div class="step-nav-sub">CapCut 合成成片</div>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== CONTENT ===== -->
+  <div class="content-area" id="content-area">
+
+  
+
+    <!-- ===== STEP 0 前期設定 ===== -->
+    <div class="page-section  active" id="section-step0">
+      <div class="section-header">
+        <div class="section-badge">STEP 0</div>
+        <div class="section-title">前期設定</div>
+        <div class="section-desc">填入影片基本資訊，完成後工具會自動組合給 Gemini 的 Prompt，請複製貼入 Gemini 開始對話。</div>
+      </div>
+
+      <div class="form-block">
+        <div class="form-block-title"><div class="num-badge">A</div>影片基本資訊</div>
+        <div class="form-row">
+          <div>
+            <div class="field-label">影片主題</div>
+            <div class="field-hint">一句話描述這支影片要傳達什麼</div>
+            <input class="styled-input" type="text" id="s0-topic" placeholder="例：手機使用禮儀">
+          </div>
+          <div>
+            <div class="field-label">影片用途</div>
+            <div class="field-hint">這支影片給誰看、用在哪裡</div>
+            <select class="styled-select" id="s0-usage">
+              <option value="職場宣導短片">🏢 職場宣導短片</option>
+              <option value="校園宣導短片">🏫 校園宣導短片</option>
+              <option value="社群行銷影片">📱 社群行銷影片</option>
+              <option value="企業品牌影片">💼 企業品牌影片</option>
+              <option value="教學說明影片">📚 教學說明影片</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <div class="field-label">目標對象</div>
+            <div class="field-hint">影響旁白語氣和畫面風格</div>
+            <input class="styled-input" type="text" id="s0-audience" placeholder="例：上班族、新進員工">
+          </div>
+          <div>
+            <div class="field-label">影片長度</div>
+            <div class="field-hint">AI 會依此自動安排鏡頭數量與秒數</div>
+            <select class="styled-select" id="s0-length">
+              <option value="約30秒">約 30 秒</option>
+              <option value="約1分鐘" selected>約 1 分鐘</option>
+              <option value="約90秒">約 90 秒</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-block">
+        <div class="form-block-title"><div class="num-badge">B</div>視覺風格</div>
+        <div class="field-hint" style="margin-bottom:8px;">選擇風格後，AI 生圖 Prompt 的措辭會自動對應調整</div>
+        <div class="chip-row" id="style-chips">
+          <div class="chip selected" data-value="真實人物＋實景攝影感">📸 真實人物＋實景</div>
+          <div class="chip" data-value="3D 動畫風格（皮克斯感）">🎨 3D 動畫風</div>
+          <div class="chip" data-value="插畫／扁平設計風格">✏️ 插畫扁平風</div>
+        </div>
+      </div>
+
+      <div class="form-block">
+        <div class="form-block-title"><div class="num-badge">C</div>語氣調性</div>
+        <div class="chip-row" id="tone-chips">
+          <div class="chip selected" data-value="輕鬆幽默，有反差笑點">😄 輕鬆幽默</div>
+          <div class="chip" data-value="溫馨感性，情感共鳴">💛 溫馨感性</div>
+          <div class="chip" data-value="正式專業，清晰有力">💼 正式專業</div>
+          <div class="chip" data-value="活潑年輕，節奏明快">⚡ 活潑年輕</div>
+        </div>
+      </div>
+
+      <div class="info-box blue" style="margin-bottom:0;">
+        <strong>完成以上設定後</strong>，點擊「產生 Prompt」，將產生的指令複製貼入 <strong>Gemini</strong> 開啟新對話，請 AI 先說明故事構想。
+      </div>
+
+      <div style="margin-top:16px;">
+        <button class="generate-btn" onclick="generateStep0Prompt()">⚡ 產生 Step 0 的 Gemini 對話開場 Prompt</button>
+        <div class="prompt-output" id="s0-output" style="display:none;">
+          <div class="prompt-output-header">
+            <span class="prompt-output-title">複製這段 Prompt → 貼入 Gemini 新對話</span>
+            <button class="copy-btn" id="s0-copy-btn" onclick="copyPromptBlock('s0-prompt-text', 's0-copy-btn')">複製</button>
+          </div>
+          <div class="prompt-text" id="s0-prompt-text"></div>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-back" onclick="goToStep('teacher', document.querySelector('[data-step=teacher]'))">← 返回老師示範頁</button>
+        <button class="btn-next" onclick="goToStep('step1', document.querySelector('[data-step=step1]'))">下一步：故事骨架 →</button>
+      </div>
+    </div>
+
+    <!-- ===== STEP 1 故事骨架 ===== -->
+    <div class="page-section" id="section-step1">
+      <div class="section-header">
+        <div class="section-badge">STEP 1</div>
+        <div class="section-title">故事骨架・分鏡表 v1</div>
+        <div class="section-desc">將 Step 0 的 Prompt 貼入 Gemini 後，Gemini 會給你一份初步分鏡腳本。這裡提供「追問 Prompt」讓你進一步要求 Gemini 整理成表格。</div>
+      </div>
+
+      <div class="info-box amber">
+        <strong>⚠️ 重要：</strong>Step 0 的 Prompt 請貼入 <strong>Gemini 的同一個對話視窗</strong>。整個影片製作過程，請維持在同一對話中，AI 才能記住前面的設定。
+      </div>
+
+      <div class="form-block">
+        <div class="form-block-title">Gemini 給出腳本後，追問這段 Prompt 取得表格</div>
+        <div class="info-box blue" style="margin-bottom:12px;">
+          這段 Prompt 請貼在 <strong>同一個 Gemini 對話</strong>的下一則訊息中
+        </div>
+        <div class="prompt-output">
+          <div class="prompt-output-header">
+            <span class="prompt-output-title">Step 1 追問 Prompt → 同一 Gemini 對話貼入</span>
+            <button class="copy-btn" id="s1-copy-btn" onclick="copyPromptBlock('s1-prompt-text', 's1-copy-btn')">複製</button>
+          </div>
+          <div class="prompt-text" id="s1-prompt-text">請將上面的腳本整理成分鏡表，以 Markdown 表格呈現，欄位為：
+
+【鏡號】【幕名稱】【景別】【畫面故事說明】【旁白口白】【建議秒數】
+
+請依影片總長度合理分配每個鏡頭的秒數，所有鏡頭秒數加總須符合影片長度。每個鏡頭的畫面故事說明要清楚描述畫面裡有什麼、人物在做什麼、情緒氛圍。</div>
+        </div>
+      </div>
+
+      <div class="form-block">
+        <div class="form-block-title">📋 範例分鏡表（手機使用禮儀 · 1分鐘版）</div>
+        <div class="field-hint" style="margin-bottom:10px;">這是老師示範的完成品樣貌，讓同學知道目標長什麼樣</div>
+        <div style="overflow-x:auto;">
+          <table class="storyboard-table" id="example-table-s1">
+            <!-- 動態填入 -->
+          </table>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-back" onclick="goToStep('step0', document.querySelector('[data-step=step0]'))">← 返回 Step 0</button>
+        <button class="btn-next" onclick="goToStep('step2', document.querySelector('[data-step=step2]'))">下一步：生圖 Prompt →</button>
+      </div>
+    </div>
+
+    <!-- ===== STEP 2 生圖 Prompt ===== -->
+    <div class="page-section" id="section-step2">
+      <div class="section-header">
+        <div class="section-badge">STEP 2</div>
+        <div class="section-title">生圖 Prompt・分鏡表 v2</div>
+        <div class="section-desc">繼續在同一個 Gemini 對話中，追問加入「畫面生圖提示詞」，然後去即夢 AI 或 Gemini 逐鏡生圖。不滿意可以調整 Prompt 後重試。</div>
+      </div>
+
+      <div class="form-block">
+        <div class="form-block-title">追問 Prompt：要求加入中文生圖提示詞</div>
+        <div class="prompt-output">
+          <div class="prompt-output-header">
+            <span class="prompt-output-title">Step 2 追問 Prompt → 同一 Gemini 對話貼入</span>
+            <button class="copy-btn" id="s2-copy-btn" onclick="copyPromptBlock('s2-prompt-text', 's2-copy-btn')">複製</button>
+          </div>
+          <div class="prompt-text" id="s2-prompt-text">請在分鏡表中新增一欄【生圖提示詞（中文）】，為每個鏡頭撰寫可直接貼入 AI 生圖工具的提示詞。
+
+要求如下：
+1. 語言：中文
+2. 每個提示詞都要包含：畫面主體描述、人物動作／表情、場景環境、光線氛圍
+3. 風格設定維持一致（請沿用開頭設定的視覺風格）
+4. 長度：每個提示詞約 50～80 字
+
+請以更新後的完整分鏡表呈現（含原有欄位＋新增欄位）。</div>
+        </div>
+      </div>
+
+      <div class="info-box blue">
+        <strong>接下來的步驟：</strong><br>
+        1. 複製上方 Prompt → 貼入 Gemini（同一對話）<br>
+        2. Gemini 會給你含「生圖提示詞」的完整分鏡表<br>
+        3. 逐鏡複製生圖提示詞 → 貼入 <span class="tool-tag tool-gemini">即夢 AI</span> 或 <span class="tool-tag tool-gemini">Gemini 生圖</span><br>
+        4. 生出的圖不滿意？回到 Gemini 說「第X鏡的生圖提示詞請調整，讓畫面更…」
+      </div>
+
+      <div class="form-block">
+        <div class="form-block-title">📋 範例分鏡表 v2（含生圖 Prompt）</div>
+        <div style="overflow-x:auto;">
+          <table class="storyboard-table" id="example-table-s2">
+            <!-- 動態填入 -->
+          </table>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-back" onclick="goToStep('step1', document.querySelector('[data-step=step1]'))">← 返回 Step 1</button>
+        <button class="btn-next" onclick="goToStep('step3', document.querySelector('[data-step=step3]'))">下一步：圖片確認 →</button>
+      </div>
+    </div>
+
+    <!-- ===== STEP 3 圖片確認 ===== -->
+    <div class="page-section" id="section-step3">
+      <div class="section-header">
+        <div class="section-badge">STEP 3</div>
+        <div class="section-title">圖片確認・讓 AI 幫你審圖</div>
+        <div class="section-desc">把生出的圖片貼回 Gemini，讓 AI 對照原始腳本確認每張圖是否符合故事意圖，不符合的鏡頭重新調整 Prompt。</div>
+      </div>
+
+      <div class="form-block">
+        <div class="form-block-title">追問 Prompt：請 AI 審核圖片</div>
+        <div class="info-box amber" style="margin-bottom:12px;">
+          <strong>操作方式：</strong>在 Gemini 同一對話中，把生好的圖片「全部上傳」，然後貼入以下 Prompt
+        </div>
+        <div class="prompt-output">
+          <div class="prompt-output-header">
+            <span class="prompt-output-title">Step 3 審圖 Prompt → 上傳圖片後貼入</span>
+            <button class="copy-btn" id="s3-copy-btn" onclick="copyPromptBlock('s3-prompt-text', 's3-copy-btn')">複製</button>
+          </div>
+          <div class="prompt-text" id="s3-prompt-text">我已完成各鏡頭的生圖，圖片如上。請對照我們原定的分鏡表腳本，逐鏡審核：
+
+1. 畫面主體是否符合故事說明？
+2. 人物動作／表情是否正確？
+3. 場景環境是否吻合？
+4. 整體視覺風格是否一致？
+
+請用表格呈現審核結果，欄位為：【鏡號】【符合度】【問題說明】【建議調整方向】
+符合度請用：✅ 符合 ／ ⚠️ 部分符合 ／ ❌ 需重生</div>
+        </div>
+      </div>
+
+      <div class="form-block">
+        <div class="form-block-title">🔄 若有鏡頭需要重生，使用這段追問</div>
+        <div class="prompt-output">
+          <div class="prompt-output-header">
+            <span class="prompt-output-title">重新生圖 Prompt（依需求調整）</span>
+            <button class="copy-btn" id="s3b-copy-btn" onclick="copyPromptBlock('s3b-prompt-text', 's3b-copy-btn')">複製</button>
+          </div>
+          <div class="prompt-text" id="s3b-prompt-text">第【X】鏡的圖片需要重新生成。問題是：【描述問題，例如：人物表情太嚴肅，應該是輕鬆的笑容】
+
+請提供調整後的生圖提示詞（中文），讓我重新生圖。</div>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-back" onclick="goToStep('step2', document.querySelector('[data-step=step2]'))">← 返回 Step 2</button>
+        <button class="btn-next" onclick="goToStep('step4', document.querySelector('[data-step=step4]'))">下一步：生影 Prompt →</button>
+      </div>
+    </div>
+
+    <!-- ===== STEP 4 生影 Prompt ===== -->
+    <div class="page-section" id="section-step4">
+      <div class="section-header">
+        <div class="section-badge">STEP 4</div>
+        <div class="section-title">生影 Prompt・分鏡表 v3</div>
+        <div class="section-desc">圖片確認後，向 Gemini 追問生影 Prompt。Veo 用中文，Kling 用英文，老師會提供事前做好的影片素材讓同學組合。</div>
+      </div>
+
+      <div class="form-block">
+        <div class="form-block-title">追問 Prompt：要求生影提示詞（雙語版）</div>
+        <div class="prompt-output">
+          <div class="prompt-output-header">
+            <span class="prompt-output-title">Step 4 追問 Prompt → 同一 Gemini 對話貼入</span>
+            <button class="copy-btn" id="s4-copy-btn" onclick="copyPromptBlock('s4-prompt-text', 's4-copy-btn')">複製</button>
+          </div>
+          <div class="prompt-text" id="s4-prompt-text">圖片審核完成，請為每個鏡頭提供生影提示詞，以完整分鏡表格呈現。
+
+欄位：【鏡號】【幕名稱】【旁白口白】【秒數】【Veo 生影提示詞（中文）】【Kling 生影提示詞（英文）】
+
+Veo 中文提示詞格式須包含：
+- 鏡頭運動（例：鏡頭緩慢向前推進）
+- 人物動作（詳細描述動作過程）
+- 環境動態（光線、背景變化）
+- 情緒氛圍
+
+Kling 英文提示詞格式：
+- Camera movement
+- Character action（詳細、避免模糊詞）
+- Negative prompt（另一欄）：bad anatomy, deformed fingers, choppy motion, character morphing, worst quality
+
+另外請提供一段：音樂風格建議（供 Suno 使用）／旁白語氣建議（供 TTS 使用）</div>
+        </div>
+      </div>
+
+      <div class="info-box amber">
+        <strong>⚠️ Kling Prompt 注意事項：</strong>若角色動作出現「前進又後退」的問題，請在 Prompt 中加入「strict one-way forward movement, no stepping back, no looping」來修正。
+      </div>
+
+      <div class="form-block">
+        <div class="form-block-title">📋 範例分鏡表 v3（生影完整版）</div>
+        <div style="overflow-x:auto;">
+          <table class="storyboard-table" id="example-table-s4">
+            <!-- 動態填入 -->
+          </table>
+        </div>
+      </div>
+
+      <div class="info-box green">
+        <strong>課堂說明：</strong>這個步驟在課堂上，老師會示範 Veo / Kling 的操作過程，同學觀摩為主（不消耗個人額度）。老師已事前生好所有鏡頭的影片素材，下一步直接進入剪輯組合！
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-back" onclick="goToStep('step3', document.querySelector('[data-step=step3]'))">← 返回 Step 3</button>
+        <button class="btn-next" onclick="goToStep('step5', document.querySelector('[data-step=step5]'))">最後一步：剪輯組合 →</button>
+      </div>
+    </div>
+
+    <!-- ===== STEP 5 剪輯組合 ===== -->
+    <div class="page-section" id="section-step5">
+      <div class="section-header">
+        <div class="section-badge">STEP 5</div>
+        <div class="section-title">剪輯組合・成片！</div>
+        <div class="section-desc">用 CapCut 或 Filmora 把各鏡頭影片組合起來，加上旁白配音、字幕和背景音樂，完成一部完整的 AI 短影音。</div>
+      </div>
+
+      <div class="info-box green">
+        <strong>🎬 老師已提供的素材：</strong>各鏡頭的 AI 生成影片檔（MP4）。請跟老師領取，開始進行剪輯！
+      </div>
+
+      <div class="form-block">
+        <div class="form-block-title">剪輯步驟說明</div>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-top:4px;">
+
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="width:26px;height:26px;background:var(--indigo);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">1</div>
+            <div>
+              <div style="font-weight:600;font-size:13px;margin-bottom:3px;">開啟 CapCut，建立新專案</div>
+              <div style="font-size:12.5px;color:var(--text-muted);">選擇 9:16（直式）或 16:9（橫式），依目標平台決定。IG Reels / TikTok 用直式；YouTube 用橫式。</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="width:26px;height:26px;background:var(--indigo);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">2</div>
+            <div>
+              <div style="font-weight:600;font-size:13px;margin-bottom:3px;">依鏡號順序匯入影片</div>
+              <div style="font-size:12.5px;color:var(--text-muted);">把老師提供的影片按鏡號排入時間軸。每個鏡頭之間可加「淡入淡出」轉場，讓畫面更流暢。</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="width:26px;height:26px;background:var(--indigo);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">3</div>
+            <div>
+              <div style="font-weight:600;font-size:13px;margin-bottom:3px;">加入旁白配音</div>
+              <div style="font-size:12.5px;color:var(--text-muted);">使用 CapCut 的「文字轉語音」功能，貼入分鏡表的旁白口白，選擇合適的 AI 語音聲線。</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="width:26px;height:26px;background:var(--indigo);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">4</div>
+            <div>
+              <div style="font-weight:600;font-size:13px;margin-bottom:3px;">加入字幕</div>
+              <div style="font-size:12.5px;color:var(--text-muted);">使用 CapCut 的「自動字幕」功能，或手動輸入旁白文字為字幕，調整字型大小與位置。</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="width:26px;height:26px;background:var(--indigo);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">5</div>
+            <div>
+              <div style="font-weight:600;font-size:13px;margin-bottom:3px;">加入背景音樂</div>
+              <div style="font-size:12.5px;color:var(--text-muted);">從 CapCut 音樂庫搜尋合適的 BGM，音量調低到旁白不被蓋過（建議 20-30%）。</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="width:26px;height:26px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">✓</div>
+            <div>
+              <div style="font-weight:600;font-size:13px;margin-bottom:3px;">匯出影片，大功告成！</div>
+              <div style="font-size:12.5px;color:var(--text-muted);">匯出選 1080P，完成你的第一支 AI 短影音！</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="info-box blue">
+        <strong>💡 工具選擇：</strong>
+        <span class="tool-tag tool-capcut">CapCut 剪映</span> 免費、操作直覺，適合初學者，功能已足夠完成這支影片。
+        進階可使用 <span class="tool-tag tool-capcut">Filmora</span>。
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-back" onclick="goToStep('step4', document.querySelector('[data-step=step4]'))">← 返回 Step 4</button>
+        <button class="btn-next" style="background:var(--green);">🎉 完成！製作你的 AI 短影音</button>
+      </div>
+
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);text-align:center;color:var(--text-light);font-size:12px;">
+        製作年月：2026/05 ｜ 心怡｜zoego99@gmail.com
+      </div>
+    </div>
+
+  </div><!-- end content-area -->
+</div><!-- end main-layout -->
+
+<div class="copy-success-toast" id="copy-toast">✓ 已複製到剪貼簿</div>
+
+<script>
+const TOPICS = {
+  phone: {
+    name: '手機使用禮儀',
+    emoji: '📱',
+    desc: `<strong>主題：</strong>手機使用禮儀宣導短片<br>
+<strong>對象：</strong>上班族、新進員工<br>
+<strong>影片長度：</strong>約 1 分鐘<br>
+<strong>語氣調性：</strong>輕鬆幽默，有反差笑點<br>
+<strong>視覺風格：</strong>真實人物＋實景攝影感<br><br>
+<strong>故事核心：</strong>描述辦公室或公共場所中，因為手機使用不當造成尷尬或困擾的情境，最後帶出正確的禮儀示範，結尾加入品牌或單位 Logo。`,
+    s1Example: [
+      ['1', '辦公室開會中', '全景', '一個重要會議正在進行，主管在台前報告，突然一陣響亮的手機鈴聲響起，所有人轉頭看向滑手機的員工，現場一片尷尬', '你有沒有過這種瞬間？', '6秒'],
+      ['2', '主角的懊悔', '中景特寫', '員工臉紅耳赤，慌張地把手機翻面靜音，旁邊同事露出「又來了」的表情', '（音效：靜音聲，笑聲）', '5秒'],
+      ['3', '捷運場景', '中景', '擁擠的捷運上，一名乘客外放手機影片，音量極大，周圍乘客紛紛皺眉，有人用手摀耳', '公共場所的音量問題，你注意到了嗎？', '7秒'],
+      ['4', '正確示範一', '近景', '同一位員工在會議前主動將手機調為靜音模式，面帶微笑放入口袋，旁邊同事給予認可的眼神', '開會前，先靜音。', '6秒'],
+      ['5', '正確示範二', '中景', '在餐廳與朋友聚餐，主角將手機螢幕朝下放在桌上，專注與朋友交談，氣氛溫馨融洽', '聚餐時，手機放一邊。', '6秒'],
+      ['6', '正確示範三', '中景', '捷運上戴著耳機聽音樂、表情自在的乘客，周圍人群神情輕鬆', '耳機是最好的禮儀。', '6秒'],
+      ['7', '總結與 CTA', '全景＋特寫', '品牌 Logo 出現，搭配三條簡潔的文字規則：靜音、放下、戴耳機。畫面溫暖有質感', '手機禮儀，從你我開始。', '8秒'],
+    ],
+    s2Example: [
+      ['1', '辦公室開會中', '一個寬敞明亮的現代辦公室會議室，主管站在簡報螢幕前，所有與會者突然回頭望向一名表情慌張的男性員工，手機滑落桌面，環境光線自然明亮，人物表情誇張生動，攝影感真實'],
+      ['2', '主角的懊悔', '男性員工特寫，臉頰通紅，雙手慌張翻找口袋靜音，鏡頭從側邊帶出旁邊同事翻白眼的表情，自然室內光，電影感構圖'],
+      ['3', '捷運場景', '台北捷運車廂內，擁擠的乘客中，一位年輕男子手持手機外放，周圍三位乘客各自做出皺眉、摀耳、無奈搖頭的動作，場景光線偏冷，都市感'],
+      ['4', '正確示範一', '辦公室走廊，一位穿著整潔的職業女性，將手機螢幕調為靜音後放入西裝口袋，旁邊同事微笑點頭，畫面乾淨溫暖，正面積極的氛圍'],
+      ['5', '正確示範二', '日式風格餐廳用餐場景，主角將手機螢幕朝下放在桌角，雙手捧杯與朋友談笑，暖色調燈光，聚餐歡樂氣氛'],
+      ['6', '正確示範三', '捷運車廂，一位女性戴著白色耳機，眼神輕鬆往窗外看，周圍乘客神情自在，整體畫面清新舒適'],
+      ['7', '總結與 CTA', '純白背景，品牌 Logo 居中，下方三行字幕依序出現：開會靜音、聚餐放下、外出戴耳機，字型簡潔現代，最後畫面定格'],
+    ],
+    s4Example: [
+      ['1', '辦公室開會中', '你有沒有過這種瞬間？', '6秒',
+       '鏡頭從門口緩慢推進（Push in），帶出整個會議室全景，當手機鈴聲響起，鏡頭快速切換至員工特寫，人物表情由放鬆轉為慌張。光線保持自然室內光。',
+       'Camera slowly pushes in from doorway to reveal a conference room. When phone rings, quick cut to close-up of the employee, expression shifting from relaxed to panicked. Strict forward camera movement only. Natural indoor lighting.'],
+      ['4', '正確示範一', '開會前，先靜音。', '6秒',
+       '鏡頭從手機螢幕特寫（靜音圖示）緩慢拉遠（Pull out），帶出員工微笑的臉，再拉遠至走廊場景，旁邊同事點頭示意。動作流暢，不重複。',
+       'Camera starts at extreme close-up of phone screen (mute icon), then smoothly pulls back (pull out) to reveal employee smiling, then wider to show colleague nodding approvingly. One continuous smooth pull-out movement, no looping.'],
+      ['7', '總結與 CTA', '手機禮儀，從你我開始。', '8秒',
+       '畫面從黑色漸入（Fade in），Logo 由中央緩慢放大至定位（Scale up），三行文字由下往上依序出現（Wipe up），最後定格5秒。無人物動作，純靜態展示。',
+       'Fade in from black. Logo scales up from center to final position. Three text lines appear from bottom one by one (wipe up effect). Static hold for 5 seconds. No character movement.'],
+    ]
+  },
+  fraud: {
+    name: '防詐騙宣導',
+    emoji: '🛡️',
+    desc: `<strong>主題：</strong>防詐騙宣導短片（年輕人版）<br>
+<strong>對象：</strong>18-35 歲年輕族群<br>
+<strong>影片長度：</strong>約 1 分鐘<br>
+<strong>語氣調性：</strong>輕鬆幽默，讓人會心一笑又記得住<br>
+<strong>視覺風格：</strong>真實人物＋實景攝影感<br><br>
+<strong>故事核心：</strong>以年輕人熟悉的詐騙情境（假冒帳號、假投資、假中獎）為主角遇到的考驗，用誇張的喜劇方式呈現詐騙手法，最後帶出「三不原則」：不點連結、不轉帳、不透露個資。`,
+    s1Example: [
+      ['1', '釣魚訊息來了', '特寫＋中景', '主角正在滑手機，突然收到一則訊息：「恭喜您中獎！只要點擊連結即可領取百萬大獎！」，主角眼睛一亮，表情充滿期待', '等等，你有沒有收過這種訊息？', '6秒'],
+      ['2', '詐騙集團視角', '全景', '用誇張喜劇風格呈現詐騙集團辦公室：三個穿西裝的人圍著電腦，敲鍵盤然後擊掌慶祝，牆上掛著「今日目標：騙100人」的白板', '（音效：陰謀音樂）他們在等你上鉤…', '7秒'],
+      ['3', '主角踩剎車', '近景', '主角正準備點連結，突然想起什麼，表情從興奮變為懷疑，把手機遠離眼睛仔細看，發現網址怪怪的', '等一下…這個連結怎麼這麼奇怪？', '6秒'],
+      ['4', '第一招：不點連結', '全景＋文字卡', '主角果斷鎖定手機，豎起大拇指，畫面出現文字：「不點可疑連結！」，背景光效強調', '第一招：不點連結。', '6秒'],
+      ['5', '假投資情境', '中景', '另一個情境：有人私訊主角「保證獲利50%，來加入我們！」，主角手比「No」的手勢，表情堅定', '天底下沒有穩賺的投資。', '6秒'],
+      ['6', '三不原則總結', '全景', '主角站在白板前，指著三條規則：不點連結、不轉帳、不透露個資，表情自信，像在教課', '記住三不原則，詐騙集團怕你！', '8秒'],
+      ['7', 'CTA 結尾', '全景＋特寫', '165 反詐騙專線號碼大字出現，搭配品牌 Logo，主角豎起大拇指笑著', '有疑問？撥打 165！', '5秒'],
+    ],
+    s2Example: [
+      ['1', '釣魚訊息來了', '年輕男性坐在咖啡廳，手持手機，臉上浮現意外驚喜的表情，手機螢幕顯示閃爍的「中獎通知」彈窗，暖色咖啡廳背景，自然日光'],
+      ['2', '詐騙集團視角', '昏暗辦公室，三個穿著不合身西裝的男子圍坐在一台舊電腦前，表情誇張地相互擊掌，背景白板上有潦草字跡，整體帶喜劇誇張感，對比強烈的光線'],
+      ['3', '主角踩剎車', '男性近景，把手機舉近眼前，皺眉仔細端詳，表情由興奮轉為懷疑，背景模糊，對焦在人物表情，光線自然'],
+      ['4', '第一招：不點連結', '男性站在明亮背景前，雙手交叉做出「禁止」手勢，表情自信，畫面右側出現紅色文字卡「不點連結」，整體構圖清爽有力'],
+      ['5', '假投資情境', '主角看著手機，鏡頭帶出手機螢幕上的「投資邀請」訊息，主角果斷搖頭並刪除訊息，表情輕鬆篤定'],
+      ['6', '三不原則總結', '明亮的辦公風格場景，主角站在白板前，白板上寫有三條清楚的規則，主角指著白板表情自信，像個老師在授課'],
+      ['7', 'CTA 結尾', '純白背景，中間大字顯示「165」，品牌 Logo 在下方，主角在畫面角落做豎拇指動作，整體乾淨有力'],
+    ],
+    s4Example: [
+      ['1', '釣魚訊息來了', '等等，你有沒有收過這種訊息？', '6秒',
+       '鏡頭從咖啡廳遠景緩慢推進（Push in）至主角臉部，當手機通知出現，鏡頭稍作停頓，主角眼睛發亮。整體動作輕快，帶喜劇節奏感。',
+       'Camera slowly pushes in from wide coffee shop shot to close-up of protagonist. When phone notification appears, camera pauses briefly as character\'s eyes light up. Light and comedic pacing. Strict forward push only, no reverse movement.'],
+      ['4', '第一招：不點連結', '第一招：不點連結。', '6秒',
+       '鏡頭從主角手部（交叉禁止手勢）特寫緩慢拉遠（Pull out），帶出主角全身及背景，文字卡從右側滑入畫面。動作穩定，禁止手勢保持清晰可見。',
+       'Camera pulls back from close-up of crossed hands to full body shot. Text card slides in from right side. Character maintains confident crossed-arm gesture throughout. Smooth pull-out, no looping, gesture stays clear and visible.'],
+      ['7', 'CTA 結尾', '有疑問？撥打 165！', '5秒',
+       '畫面從白色漸入，「165」數字由小放大至畫面中央（Scale up），Logo 由下方滑入定位，主角縮圖在角落豎起大拇指，整體靜態展示。',
+       'Fade in from white. "165" text scales up from small to center. Logo slides up from bottom into position. Character thumbnail shows thumbs-up gesture in corner. Static hold, minimal movement, clean final frame.'],
+    ]
+  }
+};
+
+let currentTopic = 'phone';
+let currentStep = 'teacher';
+
+function switchTopic(topic, btn) {
+  currentTopic = topic;
+  document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTopicContent();
+}
+
+function goToStep(step, btn) {
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.step-nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('section-' + step).classList.add('active');
+  if (btn) btn.classList.add('active');
+  currentStep = step;
+  document.getElementById('content-area').scrollTop = 0;
+}
+
+function renderTopicContent() {
+  const t = TOPICS[currentTopic];
+
+  // Teacher page
+  document.getElementById('teacher-topic-desc').innerHTML = t.desc;
+
+  // Step 1 table
+  const t1 = document.getElementById('example-table-s1');
+  t1.innerHTML = `<thead><tr><th>鏡號</th><th>幕名稱</th><th>景別</th><th>畫面故事說明</th><th>旁白口白</th><th>秒數</th></tr></thead><tbody>` +
+    t.s1Example.map(r => `<tr><td><span class="scene-num">${r[0]}</span></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td style="font-style:italic;color:var(--text-muted)">${r[4]}</td><td style="text-align:center;font-weight:600;">${r[5]}</td></tr>`).join('') +
+    `</tbody>`;
+
+  // Step 2 table
+  const t2 = document.getElementById('example-table-s2');
+  t2.innerHTML = `<thead><tr><th>鏡號</th><th>幕名稱</th><th>生圖提示詞（中文）</th></tr></thead><tbody>` +
+    t.s1Example.map((r, i) => `<tr><td><span class="scene-num">${r[0]}</span></td><td>${r[1]}</td><td style="font-size:12px;">${t.s2Example[i] || '—'}</td></tr>`).join('') +
+    `</tbody>`;
+
+  // Step 4 table
+  const t4 = document.getElementById('example-table-s4');
+  t4.innerHTML = `<thead><tr><th>鏡號</th><th>幕名稱</th><th>旁白</th><th>秒數</th><th>Veo 中文提示詞</th><th>Kling 英文提示詞</th></tr></thead><tbody>` +
+    t.s4Example.map(r => `<tr><td><span class="scene-num">${r[0]}</span></td><td>${r[1]}</td><td style="font-style:italic;color:var(--text-muted);font-size:12px;">${r[2]}</td><td style="text-align:center;font-weight:600;">${r[3]}</td><td style="font-size:11.5px;">${r[4]}</td><td style="font-size:11.5px;font-family:monospace;">${r[5]}</td></tr>`).join('') +
+    `</tbody>`;
+
+  // Update Step 0 defaults
+  const s0Topic = document.getElementById('s0-topic');
+  const s0Audience = document.getElementById('s0-audience');
+  if (currentTopic === 'phone') {
+    s0Topic.placeholder = '手機使用禮儀';
+    s0Audience.placeholder = '上班族、新進員工';
+  } else {
+    s0Topic.placeholder = '防詐騙宣導';
+    s0Audience.placeholder = '18-35 歲年輕族群';
+  }
+}
+
+function generateStep0Prompt() {
+  const topic = document.getElementById('s0-topic').value || TOPICS[currentTopic].name;
+  const usage = document.getElementById('s0-usage').value;
+  const audience = document.getElementById('s0-audience').value || (currentTopic === 'phone' ? '上班族、新進員工' : '18-35歲年輕族群');
+  const length = document.getElementById('s0-length').value;
+
+  const selectedStyle = document.querySelector('#style-chips .chip.selected');
+  const style = selectedStyle ? selectedStyle.dataset.value : '真實人物＋實景攝影感';
+
+  const selectedTone = document.querySelector('#tone-chips .chip.selected');
+  const tone = selectedTone ? selectedTone.dataset.value : '輕鬆幽默，有反差笑點';
+
+  const prompt = `你現在是我的 AI 影片導演助理。我們要製作一支宣導短片，請先幫我進行故事發想。
+
+【影片設定】
+主題：${topic}
+用途：${usage}
+目標對象：${audience}
+影片長度：${length}
+視覺風格：${style}
+語氣調性：${tone}
+
+【請完成以下任務】
+1. 提出 2-3 個不同的故事發展方向（每個方向 2-3 句話說明）
+2. 針對你最推薦的方向，說明理由
+3. 寫出一份初步的旁白文案，表格呈現（完整版，約符合影片長度）
+
+請先只提供以上內容，等我確認故事方向後，我們再進入分鏡表製作。`;
+
+  document.getElementById('s0-prompt-text').textContent = prompt;
+  document.getElementById('s0-output').style.display = 'block';
+}
+
+function copyPromptBlock(textId, btnId) {
+  const text = document.getElementById(textId).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById(btnId);
+    btn.textContent = '✓ 已複製';
+    btn.classList.add('copied');
+    showToast();
+    setTimeout(() => {
+      btn.textContent = '複製';
+      btn.classList.remove('copied');
+    }, 2500);
+  });
+}
+
+function showToast() {
+  const toast = document.getElementById('copy-toast');
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 2000);
+}
+
+// Chip single-select
+document.querySelectorAll('.chip-row').forEach(row => {
+  row.addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    row.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+    chip.classList.add('selected');
+  });
+});
+
+// Init
+renderTopicContent();
+</script>
+</body>
+</html>
