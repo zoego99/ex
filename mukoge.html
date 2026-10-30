@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MUKO 海報 Prompt 產生器</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#3D5A99',
+              light: '#5371B3',
+              dark: '#2C4375',
+              subtle: '#EEF2FA',
+              bg: '#F8F6F1'
+            }
+          },
+          fontFamily: {
+            sans: ['"Noto Sans TC"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #F8F6F1;
+      font-family: 'Noto Sans TC', sans-serif;
+    }
+    /* 自訂平滑滾動與聚焦效果 */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col antialiased">
+
+  <!-- 頂部導覽列 -->
+  <header class="bg-white border-b border-stone-200/80 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-[#3D5A99] flex items-center justify-center text-white font-bold text-lg shadow-sm shadow-[#3D5A99]/20">
+          M
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 leading-tight">MUKO 海報 Prompt 產生器</h1>
+          <p class="text-xs text-slate-500 font-medium">保健美學行銷視覺提示詞工具</p>
+        </div>
+      </div>
+      <div class="text-xs text-slate-500 bg-stone-100 px-3 py-1.5 rounded-full border border-stone-200/60 hidden sm:inline-flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        即時更新模式
+      </div>
+    </div>
+  </header>
+
+  <!-- 主要內容區：三欄 (電腦 lg:grid-cols-12) / 手機 (上中下單欄) -->
+  <main class="max-w-7xl mx-auto p-4 sm:p-6 w-full flex-1">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+      <!-- ================= 左欄：設定 (lg:col-span-3) ================= -->
+      <section class="lg:col-span-3 bg-white rounded-2xl p-5 shadow-sm border border-stone-200/80 space-y-6">
+        <div class="flex items-center gap-2 pb-2 border-b border-stone-100">
+          <svg class="w-5 h-5 text-[#3D5A99]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+          </svg>
+          <h2 class="font-bold text-slate-900 text-base">視覺設定</h2>
+        </div>
+
+        <!-- 1. 尺寸選擇按鈕 -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">
+            1. 海報尺寸比例
+          </label>
+          <div class="grid grid-cols-2 gap-2" id="ratio-btn-group">
+            <button type="button" data-ratio="3:4 直式" class="ratio-btn active-ratio px-3 py-2.5 rounded-xl border text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all bg-[#3D5A99] text-white border-[#3D5A99] shadow-sm">
+              <span class="text-sm">3:4</span>
+              <span class="text-[11px] opacity-90 font-normal">直式常規</span>
+            </button>
+            <button type="button" data-ratio="1:1 方形" class="ratio-btn px-3 py-2.5 rounded-xl border border-stone-200 text-slate-700 bg-stone-50/70 hover:bg-stone-100 text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all">
+              <span class="text-sm">1:1</span>
+              <span class="text-[11px] text-slate-500 font-normal">社群方形</span>
+            </button>
+            <button type="button" data-ratio="9:16 手機直式" class="ratio-btn px-3 py-2.5 rounded-xl border border-stone-200 text-slate-700 bg-stone-50/70 hover:bg-stone-100 text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all">
+              <span class="text-sm">9:16</span>
+              <span class="text-[11px] text-slate-500 font-normal">限動滿版</span>
+            </button>
+            <button type="button" data-ratio="16:9 橫式" class="ratio-btn px-3 py-2.5 rounded-xl border border-stone-200 text-slate-700 bg-stone-50/70 hover:bg-stone-100 text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all">
+              <span class="text-sm">16:9</span>
+              <span class="text-[11px] text-slate-500 font-normal">橫式Banner</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. 視覺風格下拉選單 -->
+        <div>
+          <label for="visualStyle" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+            2. 視覺風格
+          </label>
+          <div class="relative">
+            <select id="visualStyle" class="w-full appearance-none bg-stone-50/80 border border-stone-200 text-slate-800 text-sm rounded-xl px-3.5 py-2.5 pr-9 focus:ring-2 focus:ring-[#3D5A99]/20 focus:border-[#3D5A99] outline-none transition-all">
+              <option value="日系清新">日系清新（自然採光・溫暖留白・柔和療癒）</option>
+              <option value="極簡向量插畫">極簡向量插畫（洗練輪廓・現代幾何・明亮配色）</option>
+              <option value="3D 黏土質感">3D 黏土質感（柔軟微立體・溫潤親和・討喜吸睛）</option>
+              <option value="手繪感筆記">手繪感筆記（手繪塗鴉・筆記標註・親切手感）</option>
+              <option value="社論雜誌插畫">社論雜誌插畫（知性典雅・紙質肌理・高端人文）</option>
+              <option value="現代數據儀表板">現代數據儀表板（科研權威・圖表資訊・精密俐落）</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1.5">將自動帶入對應的美術質感與光影指引</p>
+        </div>
+      </section>
+
+      <!-- ================= 中欄：活動資訊（表單） (lg:col-span-5) ================= -->
+      <section class="lg:col-span-5 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-stone-200/80 space-y-5">
+        <div class="flex items-center gap-2 pb-2 border-b border-stone-100">
+          <svg class="w-5 h-5 text-[#3D5A99]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <h2 class="font-bold text-slate-900 text-base">活動資訊表單</h2>
+        </div>
+
+        <!-- 1. 海報類型切換 -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+            1. 海報類型
+          </label>
+          <div class="flex p-1 bg-stone-100 rounded-xl gap-1">
+            <button type="button" id="tabCampaign" class="flex-1 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all bg-white text-[#3D5A99] shadow-xs">
+              活動組合海報
+            </button>
+            <button type="button" id="tabSingle" class="flex-1 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all text-slate-600 hover:text-slate-900">
+              單品資訊圖
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. 活動組合海報專用欄位 -->
+        <div id="campaignFields" class="space-y-4">
+          <div>
+            <label for="campaignName" class="block text-xs font-semibold text-slate-700 mb-1.5">活動名稱</label>
+            <input type="text" id="campaignName" value="春季機能換季慶｜日常代謝循環提案" placeholder="例如：春季元氣保養展、限時兩件8折" class="w-full bg-stone-50/80 border border-stone-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-[#3D5A99]/20 focus:border-[#3D5A99] outline-none transition-all">
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-xs font-semibold text-slate-700">參與商品（可複選）</label>
+              <span class="text-[11px] text-slate-500" id="selectedCountCampaign">已選 2 項</span>
+            </div>
+            <div id="campaignProductsList" class="space-y-2 max-h-48 overflow-y-auto custom-scroll pr-1">
+              <!-- 由 JavaScript 自動產生商品清單 (編號、商品名稱、保養方向) -->
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="originalPrice" class="block text-xs font-semibold text-slate-700 mb-1.5">原價（NT$）</label>
+              <input type="number" id="originalPrice" value="3200" placeholder="3200" class="w-full bg-stone-50/80 border border-stone-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-[#3D5A99]/20 focus:border-[#3D5A99] outline-none">
+            </div>
+            <div>
+              <label for="specialPrice" class="block text-xs font-semibold text-slate-700 mb-1.5">特價（NT$）</label>
+              <input type="number" id="specialPrice" value="2380" placeholder="2380" class="w-full bg-stone-50/80 border border-stone-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-[#3D5A99]/20 focus:border-[#3D5A99] outline-none font-semibold text-[#3D5A99]">
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 單品資訊圖專用欄位 (預設隱藏) -->
+        <div id="singleFields" class="space-y-4 hidden">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">主打商品（單選）</label>
+            <div id="singleProductList" class="space-y-2 max-h-52 overflow-y-auto custom-scroll pr-1">
+              <!-- 由 JavaScript 自動產生單選商品清單 -->
+            </div>
+          </div>
+
+          <div>
+            <label for="infographicType" class="block text-xs font-semibold text-slate-700 mb-1.5">資訊圖類型</label>
+            <select id="infographicType" class="w-full bg-stone-50/80 border border-stone-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 focus:ring-2 focus:ring-[#3D5A99]/20 focus:border-[#3D5A99] outline-none">
+              <option value="成分配方型">成分配方型（聚焦核心機能成分、專利技術與配方價值）</option>
+              <option value="身體警訊型">身體警訊型（現代人生活困境、代謝沉重等生活日常場景切入）</option>
+              <option value="健康知識型">健康知識型（日常營養小教室、保健品正確補充觀念與步驟）</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 4. 補充說明（選填） -->
+        <div class="pt-2 border-t border-stone-100">
+          <label for="extraNotes" class="block text-xs font-semibold text-slate-700 mb-1.5">
+            補充說明 <span class="text-slate-400 font-normal">（選填，如：滿額贈送提袋、主標副標特殊要求等）</span>
+          </label>
+          <textarea id="extraNotes" rows="2" placeholder="例如：主標題請醒目放置在上方，背景加入清爽薄荷綠水彩暈染感" class="w-full bg-stone-50/80 border border-stone-200 rounded-xl p-3 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-[#3D5A99]/20 focus:border-[#3D5A99] outline-none resize-none transition-all"></textarea>
+        </div>
+      </section>
+
+      <!-- ================= 右欄：提示詞 (lg:col-span-4) ================= -->
+      <section class="lg:col-span-4 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-stone-200/80 flex flex-col space-y-4">
+        <div class="flex items-center justify-between pb-2 border-b border-stone-100">
+          <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-[#3D5A99]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <h2 class="font-bold text-slate-900 text-base">產出提示詞</h2>
+          </div>
+          <span class="text-[11px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-medium border border-emerald-100">可線上即時編輯</span>
+        </div>
+
+        <!-- 頁籤：短版 / 完整版 -->
+        <div class="flex border-b border-stone-200">
+          <button type="button" id="tabShort" class="flex-1 pb-2.5 text-xs sm:text-sm font-bold border-b-2 border-[#3D5A99] text-[#3D5A99] transition-all">
+            短版（搭配 Skill）
+          </button>
+          <button type="button" id="tabFull" class="flex-1 pb-2.5 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all">
+            完整版（無 Skill）
+          </button>
+        </div>
+
+        <!-- 頁籤下方提示 -->
+        <div id="tabHint" class="bg-amber-50/80 border border-amber-200/70 text-amber-800 rounded-xl p-3 text-xs leading-relaxed flex items-start gap-2">
+          <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span id="hintText">短版請先在 Gemini 輸入 <strong class="font-semibold text-amber-900">/</strong> 點選 Skill 再貼上。</span>
+        </div>
+
+        <!-- 即時編輯區塊 -->
+        <div class="relative flex-1">
+          <textarea id="promptOutput" class="w-full h-80 sm:h-96 bg-stone-50/70 border border-stone-200 rounded-xl p-3.5 text-xs leading-relaxed font-mono text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#3D5A99]/20 focus:border-[#3D5A99] outline-none custom-scroll resize-none" spellcheck="false"></textarea>
+        </div>
+
+        <!-- 複製按鈕與狀態提示 -->
+        <div class="space-y-2 pt-1">
+          <button type="button" id="copyBtn" class="w-full bg-[#3D5A99] hover:bg-[#334b80] active:scale-[0.99] text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <span id="copyBtnText">複製提示詞 (Prompt)</span>
+          </button>
+
+          <!-- 複製成功提示 Banner -->
+          <div id="copySuccessMsg" class="hidden items-center justify-center gap-1.5 py-2 px-3 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs rounded-xl text-center font-medium transition-all">
+            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>提示詞已成功複製到剪貼簿！可直接前往 Gemini 貼上使用。</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- 頁尾說明 -->
+  <footer class="mt-auto py-4 text-center text-xs text-slate-400 border-t border-stone-200/60">
+    MUKO Health & Wellness · 海報生成提示詞輔助工具
+  </footer>
+
+  <!-- ================= JavaScript 邏輯 ================= -->
+  <script>
+    /**
+     * 1. 商品資料清單
+     * 只取「編號、商品名稱、保養方向」三欄，排除規格、成分、賣點等其他欄位
+     */
+    const PRODUCTS = [
+      { id: "P01", name: "納豆藻油複方膠囊", direction: "循環" },
+      { id: "P02", name: "沐鈣元氣粉包", direction: "骨骼" },
+      { id: "P03", name: "肉桂苦瓜胜肽", direction: "代謝" },
+      { id: "P04", name: "22株益生菌", direction: "腸道" },
+      { id: "P05", name: "野菜酵素順暢錠", direction: "消化（選用）" }
+    ];
+
+    // 狀態管理
+    const state = {
+      ratio: "3:4 直式",
+      style: "日系清新",
+      posterType: "campaign", // 'campaign' | 'single'
+      campaignName: "春季機能換季慶｜日常代謝循環提案",
+      campaignSelectedIds: ["P01", "P03"], // 預設勾選
+      originalPrice: "3200",
+      specialPrice: "2380",
+      singleSelectedId: "P01",
+      infographicType: "成分配方型",
+      notes: "",
+      activePromptTab: "short", // 'short' | 'full'
+      isManualEdited: false // 使用者手動編輯過標記
+    };
+
+    // DOM 元素引用
+    const campaignProductsListEl = document.getElementById("campaignProductsList");
+    const singleProductListEl = document.getElementById("singleProductList");
+    const tabCampaignBtn = document.getElementById("tabCampaign");
+    const tabSingleBtn = document.getElementById("tabSingle");
+    const campaignFieldsEl = document.getElementById("campaignFields");
+    const singleFieldsEl = document.getElementById("singleFields");
+    const selectedCountCampaignEl = document.getElementById("selectedCountCampaign");
+    const tabShortBtn = document.getElementById("tabShort");
+    const tabFullBtn = document.getElementById("tabFull");
+    const hintTextEl = document.getElementById("hintText");
+    const promptOutputEl = document.getElementById("promptOutput");
+    const copyBtn = document.getElementById("copyBtn");
+    const copyBtnText = document.getElementById("copyBtnText");
+    const copySuccessMsg = document.getElementById("copySuccessMsg");
+    const visualStyleSelect = document.getElementById("visualStyle");
+    const campaignNameInput = document.getElementById("campaignName");
+    const originalPriceInput = document.getElementById("originalPrice");
+    const specialPriceInput = document.getElementById("specialPrice");
+    const infographicTypeSelect = document.getElementById("infographicType");
+    const extraNotesInput = document.getElementById("extraNotes");
+
+    /**
+     * 初始化渲染商品選單
+     */
+    function renderProductOptions() {
+      // 1. 活動組合海報：複選核取方塊
+      campaignProductsListEl.innerHTML = PRODUCTS.map(p => {
+        const checked = state.campaignSelectedIds.includes(p.id) ? "checked" : "";
+        return `
+          <label class="flex items-center justify-between p-2.5 rounded-xl border border-stone-200/90 bg-stone-50/50 hover:bg-stone-100/80 cursor-pointer transition-colors text-xs sm:text-sm">
+            <div class="flex items-center gap-2.5">
+              <input type="checkbox" value="${p.id}" ${checked} class="campaign-checkbox w-4 h-4 text-[#3D5A99] rounded border-stone-300 focus:ring-[#3D5A99]">
+              <span class="font-mono text-slate-400 font-semibold text-xs">[${p.id}]</span>
+              <span class="font-medium text-slate-800">${p.name}</span>
+            </div>
+            <span class="text-[11px] px-2 py-0.5 rounded-md bg-[#EEF2FA] text-[#3D5A99] font-medium border border-[#3D5A99]/15">
+              ${p.direction}
+            </span>
+          </label>
+        `;
+      }).join("");
+
+      // 2. 單品資訊圖：單選圓鈕
+      singleProductListEl.innerHTML = PRODUCTS.map(p => {
+        const checked = state.singleSelectedId === p.id ? "checked" : "";
+        return `
+          <label class="flex items-center justify-between p-2.5 rounded-xl border border-stone-200/90 bg-stone-50/50 hover:bg-stone-100/80 cursor-pointer transition-colors text-xs sm:text-sm">
+            <div class="flex items-center gap-2.5">
+              <input type="radio" name="singleProductRadio" value="${p.id}" ${checked} class="single-radio w-4 h-4 text-[#3D5A99] border-stone-300 focus:ring-[#3D5A99]">
+              <span class="font-mono text-slate-400 font-semibold text-xs">[${p.id}]</span>
+              <span class="font-medium text-slate-800">${p.name}</span>
+            </div>
+            <span class="text-[11px] px-2 py-0.5 rounded-md bg-stone-200/70 text-slate-700 font-medium">
+              ${p.direction}
+            </span>
+          </label>
+        `;
+      }).join("");
+
+      bindProductEvents();
+    }
+
+    /**
+     * 綁定商品勾選事件
+     */
+    function bindProductEvents() {
+      // 複選
+      document.querySelectorAll(".campaign-checkbox").forEach(cb => {
+        cb.addEventListener("change", () => {
+          const selected = Array.from(document.querySelectorAll(".campaign-checkbox:checked")).map(el => el.value);
+          state.campaignSelectedIds = selected;
+          selectedCountCampaignEl.textContent = `已選 ${selected.length} 項`;
+          updatePrompt();
+        });
+      });
+
+      // 單選
+      document.querySelectorAll(".single-radio").forEach(rb => {
+        rb.addEventListener("change", (e) => {
+          if (e.target.checked) {
+            state.singleSelectedId = e.target.value;
+            updatePrompt();
+          }
+        });
+      });
+    }
+
+    /**
+     * 核心邏輯：生成提示詞文字
+     */
+    function generatePromptText(tabType) {
+      const isShort = tabType === "short";
+      const isCampaign = state.posterType === "campaign";
+
+      // 取得商品資訊
+      let productDetailsText = "";
+      if (isCampaign) {
+        const selectedList = PRODUCTS.filter(p => state.campaignSelectedIds.includes(p.id));
+        if (selectedList.length === 0) {
+          productDetailsText = "（尚未選擇任何商品）";
+        } else {
+          productDetailsText = selectedList.map(p => `- 【${p.id}】${p.name}（保養方向：${p.direction}）`).join("\n");
+        }
+      } else {
+        const singleP = PRODUCTS.find(p => p.id === state.singleSelectedId) || PRODUCTS[0];
+        productDetailsText = `- 【${singleP.id}】${singleP.name}（保養方向：${singleP.direction}）`;
+      }
+
+      // ===== 短版：只列條件（搭配 Skill） =====
+      if (isShort) {
+        if (isCampaign) {
+          let text = `【MUKO 活動組合海報生成需求】
+- 尺寸比例：${state.ratio}
+- 視覺風格：${state.style}
+- 海報類型：活動組合海報
+- 活動名稱：${state.campaignName || "未填寫"}
+- 參與商品：
+${productDetailsText}
+- 價格設定：原價 NT$ ${state.originalPrice || "0"} / 檔期特惠價 NT$ ${state.specialPrice || "0"}`;
+
+          if (state.notes.trim()) {
+            text += `\n- 補充說明：${state.notes.trim()}`;
+          }
+          return text;
+        } else {
+          let text = `【MUKO 單品資訊圖生成需求】
+- 尺寸比例：${state.ratio}
+- 視覺風格：${state.style}
+- 海報類型：單品資訊圖
+- 資訊圖類型：${state.infographicType}
+- 主打商品：
+${productDetailsText}`;
+
+          if (state.notes.trim()) {
+            text += `\n- 補充說明：${state.notes.trim()}`;
+          }
+          return text;
+        }
+      }
+
+      // ===== 完整版：條件 ＋ 四大核心規則（無 Skill） =====
+      else {
+        const baseRules = `【生成規則與合規性限制】
+1. 商品名稱照原文：所有商品名稱務必嚴格依上述中文名稱完整呈現，不得自行改寫或翻譯。
+2. 包裝保留原樣：若畫面繪製或呈現商品盒裝、瓶罐，請忠實保留品牌簡潔質感外觀與識別色調。
+3. 不使用醫療效能用語：畫面文案與標語嚴格遵守食品衛生安全法規，絕不使用「療效、根治、預防疾病、降血糖、降血壓、抗發炎」等醫療與療效宣稱詞彙，一律使用「營養補給、健康維持、調節生理機能、促進新陳代謝」等溫和保養用語。
+4. 警語規範標註：海報底端或合適版位必須清楚加註標準免責警語字樣：「本產品為食品，不能取代正常飲食與藥物治療」。`;
+
+        if (isCampaign) {
+          let text = `請為保健品牌「MUKO」設計一張吸睛、具行銷轉換力且高質感的活動組合宣傳海報。
+
+【海報條件與內容規格】
+- 畫布尺寸：${state.ratio}
+- 美術風格：${state.style}
+- 海報類別：活動組合海報
+- 活動檔期主題：${state.campaignName || "日常保養組合特惠"}
+- 推薦商品組合：
+${productDetailsText}
+- 優惠價格標示：原價 NT$ ${state.originalPrice || "0"}，限定特價 NT$ ${state.specialPrice || "0"}`;
+
+          if (state.notes.trim()) {
+            text += `\n- 畫面補充備註：${state.notes.trim()}`;
+          }
+
+          text += `\n\n${baseRules}\n\n請根據以上規格，輸出完整的海報視覺排版構圖說明、文案標題建議（主標/副標/CTA按鈕）以及適合生圖的精準英文 Image Generation Prompt。`;
+          return text;
+        } else {
+          let text = `請為保健品牌「MUKO」設計一張專業、清晰、易懂的社群單品衛教資訊圖（Infographic）。
+
+【資訊圖規格與主題】
+- 畫布尺寸：${state.ratio}
+- 美術風格：${state.style}
+- 海報類別：單品資訊圖
+- 內容策劃切入角度：${state.infographicType}
+- 主打商品：
+${productDetailsText}`;
+
+          if (state.notes.trim()) {
+            text += `\n- 畫面補充備註：${state.notes.trim()}`;
+          }
+
+          text += `\n\n${baseRules}\n\n請規劃適合手機閱讀的資訊圖層次結構（頂部痛點或主題破題、中部3大核心資訊重點圖解、底部商品呼應與警語），並提供中文排版規劃及生圖 Prompt 指引。`;
+          return text;
+        }
+      }
+    }
+
+    /**
+     * 更新文字框提示詞
+     */
+    function updatePrompt(force = false) {
+      promptOutputEl.value = generatePromptText(state.activePromptTab);
+    }
+
+    // ================= 監聽事件綁定 =================
+
+    // 1. 尺寸按鈕點擊
+    document.querySelectorAll(".ratio-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".ratio-btn").forEach(b => {
+          b.classList.remove("bg-[#3D5A99]", "text-white", "border-[#3D5A99]", "shadow-sm");
+          b.classList.add("border-stone-200", "text-slate-700", "bg-stone-50/70");
+          const subText = b.querySelector("span:last-child");
+          if (subText) subText.classList.replace("text-white/90", "text-slate-500");
+        });
+
+        btn.classList.remove("border-stone-200", "text-slate-700", "bg-stone-50/70");
+        btn.classList.add("bg-[#3D5A99]", "text-white", "border-[#3D5A99]", "shadow-sm");
+        const sub = btn.querySelector("span:last-child");
+        if (sub) sub.classList.replace("text-slate-500", "text-white/90");
+
+        state.ratio = btn.getAttribute("data-ratio");
+        updatePrompt();
+      });
+    });
+
+    // 2. 風格下拉變更
+    visualStyleSelect.addEventListener("change", (e) => {
+      state.style = e.target.value;
+      updatePrompt();
+    });
+
+    // 3. 中欄海報類型 Tab 切換
+    tabCampaignBtn.addEventListener("click", () => {
+      state.posterType = "campaign";
+      tabCampaignBtn.className = "flex-1 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all bg-white text-[#3D5A99] shadow-xs";
+      tabSingleBtn.className = "flex-1 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all text-slate-600 hover:text-slate-900";
+      campaignFieldsEl.classList.remove("hidden");
+      singleFieldsEl.classList.add("hidden");
+      updatePrompt();
+    });
+
+    tabSingleBtn.addEventListener("click", () => {
+      state.posterType = "single";
+      tabSingleBtn.className = "flex-1 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all bg-white text-[#3D5A99] shadow-xs";
+      tabCampaignBtn.className = "flex-1 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all text-slate-600 hover:text-slate-900";
+      singleFieldsEl.classList.remove("hidden");
+      campaignFieldsEl.classList.add("hidden");
+      updatePrompt();
+    });
+
+    // 4. 表單輸入即時聯動
+    campaignNameInput.addEventListener("input", (e) => {
+      state.campaignName = e.target.value;
+      updatePrompt();
+    });
+
+    originalPriceInput.addEventListener("input", (e) => {
+      state.originalPrice = e.target.value;
+      updatePrompt();
+    });
+
+    specialPriceInput.addEventListener("input", (e) => {
+      state.specialPrice = e.target.value;
+      updatePrompt();
+    });
+
+    infographicTypeSelect.addEventListener("change", (e) => {
+      state.infographicType = e.target.value;
+      updatePrompt();
+    });
+
+    extraNotesInput.addEventListener("input", (e) => {
+      state.notes = e.target.value;
+      updatePrompt();
+    });
+
+    // 5. 右欄提示詞頁籤切換
+    tabShortBtn.addEventListener("click", () => {
+      state.activePromptTab = "short";
+      tabShortBtn.className = "flex-1 pb-2.5 text-xs sm:text-sm font-bold border-b-2 border-[#3D5A99] text-[#3D5A99] transition-all";
+      tabFullBtn.className = "flex-1 pb-2.5 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all";
+      
+      // 更新下方提示
+      hintTextEl.innerHTML = '短版請先在 Gemini 輸入 <strong class="font-semibold text-amber-900">/</strong> 點選 Skill 再貼上。';
+      updatePrompt();
+    });
+
+    tabFullBtn.addEventListener("click", () => {
+      state.activePromptTab = "full";
+      tabFullBtn.className = "flex-1 pb-2.5 text-xs sm:text-sm font-bold border-b-2 border-[#3D5A99] text-[#3D5A99] transition-all";
+      tabShortBtn.className = "flex-1 pb-2.5 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all";
+      
+      // 更新下方提示
+      hintTextEl.innerHTML = '完整版自帶合規規則與排版指南，可直接複製貼入 Gemini 獨立進行海報生成。';
+      updatePrompt();
+    });
+
+    // 6. 複製功能（遵循規定使用 document.execCommand('copy') 以兼顧相容性）
+    copyBtn.addEventListener("click", () => {
+      promptOutputEl.select();
+      promptOutputEl.setSelectionRange(0, 99999); // 手機相容
+
+      try {
+        const successful = document.execCommand("copy");
+        if (successful) {
+          showCopySuccess();
+        } else {
+          fallbackClipboardCopy();
+        }
+      } catch (err) {
+        fallbackClipboardCopy();
+      }
+    });
+
+    function fallbackClipboardCopy() {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(promptOutputEl.value)
+          .then(() => showCopySuccess())
+          .catch(() => alertFallback());
+      } else {
+        alertFallback();
+      }
+    }
+
+    function showCopySuccess() {
+      // 按鈕微動畫反饋
+      copyBtnText.textContent = "已複製！";
+      copyBtn.classList.replace("bg-[#3D5A99]", "bg-emerald-600");
+
+      copySuccessMsg.classList.remove("hidden");
+      copySuccessMsg.classList.add("flex");
+
+      setTimeout(() => {
+        copyBtnText.textContent = "複製提示詞 (Prompt)";
+        copyBtn.classList.replace("bg-emerald-600", "#3D5A99");
+        setTimeout(() => {
+          copySuccessMsg.classList.add("hidden");
+          copySuccessMsg.classList.remove("flex");
+        }, 3000);
+      }, 1500);
+    }
+
+    function alertFallback() {
+      copySuccessMsg.innerHTML = "<span>請使用快捷鍵 Ctrl+C / Cmd+C 複製選取文字</span>";
+      copySuccessMsg.classList.remove("hidden");
+      copySuccessMsg.classList.add("flex");
+    }
+
+    // 初始化執行
+    window.addEventListener("DOMContentLoaded", () => {
+      renderProductOptions();
+      updatePrompt();
+    });
+  </script>
+</body>
+</html>
