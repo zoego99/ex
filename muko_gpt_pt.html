@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MUKO 海報 Prompt 產生器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#3D5A99;--bg:#F8F6F1;--line:#DFE4EC;--text:#293348;--muted:#68758A;--soft:#EDF2FB}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:'Noto Sans TC',system-ui,sans-serif;font-size:15px;line-height:1.6}
+header{padding:25px 24px 20px;text-align:center}header h1{margin:0;color:var(--blue);font-size:clamp(23px,3vw,31px);letter-spacing:.04em}header p{margin:7px 0 0;color:var(--muted);font-size:14px}
+.layout{max-width:1520px;margin:0 auto 35px;padding:0 20px;display:grid;grid-template-columns:minmax(245px,.85fr) minmax(330px,1.1fr) minmax(380px,1.3fr);gap:18px;align-items:start}
+.card{background:#fff;border:1px solid #E7EAF0;border-radius:18px;padding:22px;box-shadow:0 8px 24px #2239650b;min-width:0}
+.card h2{font-size:18px;color:var(--blue);margin:0 0 19px}.section{margin:0 0 21px}label,.label{display:block;font-size:14px;font-weight:700;margin-bottom:8px}input,select,textarea{font:inherit;color:var(--text)}input:not([type=checkbox]),select,textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:white;padding:11px 12px;outline:none}input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px #3d5a991c}
+.sizes{display:grid;grid-template-columns:1fr 1fr;gap:9px}.choice,.tab,.type-choice{cursor:pointer;border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px;color:var(--text);font-weight:600;font-size:13px}.choice.active,.type-choice.active{background:var(--soft);color:var(--blue);border-color:var(--blue)}
+.type-switch{display:grid;grid-template-columns:1fr 1fr;gap:9px}.hint{color:var(--muted);font-size:12px;margin:7px 0 0}.field{margin:0 0 17px}.products{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:11px;padding:5px 12px}.product{display:flex;gap:10px;align-items:flex-start;padding:11px 0;border-bottom:1px solid #EFF1F4;cursor:pointer}.product:last-child{border-bottom:0}.product input{margin-top:5px;accent-color:var(--blue)}.product span{flex:1}.product small{display:block;color:var(--muted);font-size:12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hidden{display:none!important}.tabs{display:flex;border-bottom:1px solid var(--line);gap:5px;margin-bottom:13px}.tab{border:0;border-radius:9px 9px 0 0;padding:11px 17px;color:var(--muted)}.tab.active{color:var(--blue);background:var(--soft);box-shadow:inset 0 -3px var(--blue)}
+#prompt{display:block;width:100%;min-height:440px;resize:vertical;font-size:14px;line-height:1.85;border-radius:12px;padding:15px;background:#FBFCFE}.note{font-size:13px;color:var(--muted);margin:12px 0 15px;background:#F1F5FB;padding:10px 12px;border-radius:9px}.copy{background:var(--blue);border:0;border-radius:10px;color:white;font:inherit;font-weight:700;cursor:pointer;padding:12px 24px;width:100%}.copy:hover{background:#2E477C}.status{color:#257B58;min-height:24px;text-align:center;margin:8px 0 0;font-size:13px}footer{color:var(--muted);text-align:center;font-size:12px;margin:0 15px 25px}
+@media(max-width:1100px){.layout{grid-template-columns:1fr 1fr}.card:last-child{grid-column:1/-1}#prompt{min-height:290px}}
+@media(max-width:700px){header{padding:22px 14px 18px}.layout{grid-template-columns:1fr;gap:13px;padding:0 13px}.card{padding:18px}.card:last-child{grid-column:auto}.two{grid-template-columns:1fr 1fr}#prompt{min-height:320px}}
+</style>
+</head>
+<body>
+<header><h1>MUKO 海報 Prompt 產生器</h1><p>選擇設定、填寫活動，一鍵取得 Gemini 圖像生成提示詞</p></header>
+<main class="layout">
+  <section class="card" aria-labelledby="settings-title">
+    <h2 id="settings-title">01｜海報設定</h2>
+    <div class="section"><div class="label">海報尺寸</div>
+      <div class="sizes" id="sizes">
+        <button type="button" class="choice active" data-size="3:4 直式">3:4 直式</button>
+        <button type="button" class="choice" data-size="1:1 方形">1:1 方形</button>
+        <button type="button" class="choice" data-size="9:16 手機直式">9:16 手機直式</button>
+        <button type="button" class="choice" data-size="16:9 橫式">16:9 橫式</button>
+      </div>
+    </div>
+    <div class="section"><label for="style">視覺風格</label>
+      <select id="style">
+        <option>極簡向量插畫</option><option>日系清新</option><option>3D 黏土質感</option>
+        <option>手繪感筆記</option><option>社論雜誌插畫</option><option>現代數據儀表板</option>
+      </select>
+    </div>
+    <p class="hint">所有設定會立即更新目前頁籤的提示詞。</p>
+  </section>
+
+  <section class="card" aria-labelledby="info-title">
+    <h2 id="info-title">02｜活動資訊</h2>
+    <div class="section"><div class="label">海報類型</div>
+      <div class="type-switch" id="types">
+        <button type="button" class="type-choice active" data-type="campaign">活動組合海報</button>
+        <button type="button" class="type-choice" data-type="single">單品資訊圖</button>
+      </div>
+    </div>
+    <div id="campaignFields">
+      <div class="field"><label for="campaignName">活動名稱</label><input id="campaignName" placeholder="例如：雙11 健康好禮節"></div>
+      <div class="field"><div class="label">活動商品（可複選）</div><div class="products" id="multiProducts"></div></div>
+      <div class="two">
+        <div class="field"><label for="originalPrice">原價（選填）</label><input id="originalPrice" placeholder="例如：NT$ 2,980"></div>
+        <div class="field"><label for="salePrice">特價（選填）</label><input id="salePrice" placeholder="例如：NT$ 1,980"></div>
+      </div>
+      <p class="hint">價格以整組活動計算；若各商品價格不同，請寫在補充說明。</p>
+    </div>
+    <div id="singleFields" class="hidden">
+      <div class="field"><label for="singleProduct">商品（單選）</label><select id="singleProduct"></select></div>
+      <div class="field"><label for="infoType">資訊圖類型</label>
+        <select id="infoType"><option>成分配方型</option><option>身體警訊型</option><option>健康知識型</option></select>
+        <p class="hint">商品資料僅提供保養方向，未提供的成分、數據或功效請勿自行編造。</p>
+      </div>
+    </div>
+    <div class="field"><label for="extra">補充說明（選填）</label><textarea id="extra" rows="4" placeholder="例如：主標題、活動日期、目標客群、希望呈現的文案"></textarea></div>
+  </section>
+
+  <section class="card" aria-labelledby="prompt-title">
+    <h2 id="prompt-title">03｜AI 提示詞</h2>
+    <div class="tabs" role="tablist" aria-label="提示詞版本">
+      <button type="button" class="tab active" data-tab="short" role="tab" aria-selected="true">短版｜搭配 Skill</button>
+      <button type="button" class="tab" data-tab="full" role="tab" aria-selected="false">完整版｜直接使用</button>
+    </div>
+    <label for="prompt">可直接編輯下方內容</label>
+    <textarea id="prompt" spellcheck="false" aria-label="產生的提示詞"></textarea>
+    <p class="note" id="tabTip">短版請先在 Gemini 輸入 / 點選 Skill，再貼上此提示詞。</p>
+    <button type="button" id="copyBtn" class="copy">複製提示詞</button>
+    <p id="copyStatus" class="status" role="status" aria-live="polite"></p>
+  </section>
+</main>
+<footer>MUKO Prompt Studio｜請於發佈前核對商品、價格、包裝圖片及食品廣告文案。</footer>
+<script>
+'use strict';
+// 僅使用 CSV 中的「編號、商品名稱、保養方向」三欄。
+const products = [
+  {id:'P01', name:'納豆藻油複方膠囊', direction:'循環'},
+  {id:'P02', name:'沐鈣元氣粉包', direction:'骨骼'},
+  {id:'P03', name:'肉桂苦瓜胜肽', direction:'代謝'},
+  {id:'P04', name:'22株益生菌', direction:'腸道'},
+  {id:'P05', name:'野菜酵素順暢錠', direction:'消化（選用）'}
+];
+const $ = id => document.getElementById(id);
+const state = {size:'3:4 直式', type:'campaign', tab:'short'};
+const productLabel = p => `${p.id}｜${p.name}（保養方向：${p.direction}）`;
+function initProducts(){
+  products.forEach(p=>{
+    const label=document.createElement('label'); label.className='product';
+    const input=document.createElement('input'); input.type='checkbox';input.value=p.id;
+    input.addEventListener('change',refresh);
+    const text=document.createElement('span');text.textContent=`${p.id}｜${p.name}`;
+    const small=document.createElement('small');small.textContent=`保養方向：${p.direction}`;
+    text.appendChild(small);label.append(input,text);$('multiProducts').appendChild(label);
+    const option=document.createElement('option');option.value=p.id;option.textContent=`${p.id}｜${p.name}`;
+    $('singleProduct').appendChild(option);
+  });
+}
+function buildPrompt(full){
+  const lines=[
+    '請製作一張 MUKO 沐光生技的繁體中文海報。',
+    `海報尺寸：${state.size}`,
+    `視覺風格：${$('style').value}`,
+    `海報類型：${state.type==='campaign'?'活動組合海報':'單品資訊圖'}`
+  ];
+  if(state.type==='campaign'){
+    const selected=[...$('multiProducts').querySelectorAll('input:checked')].map(el=>products.find(p=>p.id===el.value));
+    lines.push(`活動名稱：${$('campaignName').value.trim()||'請依活動主題設計'}`);
+    lines.push('活動商品：');
+    lines.push(...(selected.length?selected.map(p=>`- ${productLabel(p)}`):['- 尚未選擇，請先選擇商品']));
+    if($('originalPrice').value.trim())lines.push(`原價：${$('originalPrice').value.trim()}`);
+    if($('salePrice').value.trim())lines.push(`特價：${$('salePrice').value.trim()}`);
+  } else {
+    const p=products.find(x=>x.id===$('singleProduct').value)||products[0];
+    lines.push(`商品：${productLabel(p)}`);
+    lines.push(`內容方向：${$('infoType').value}`);
+    lines.push('請圍繞商品保養方向安排易讀的標題與圖像說明。');
+  }
+  if($('extra').value.trim())lines.push(`補充說明：${$('extra').value.trim()}`);
+  if(full){
+    lines.push('', '【製作規則】',
+      '1. 所有文字使用繁體中文，商品名稱必須與提供的原文完全一致，不增刪字。',
+      '2. 如使用商品包裝，必須忠實保留使用者提供的原始包裝外觀、商標、色彩與文字；未提供包裝參考圖時，不可虛構包裝，請保留商品圖位置供後製。',
+      '3. 避免疾病治療、預防、診斷及其他醫療效能用語，不保證療效，也不誇大食品功效。',
+      '4. 僅依已提供的資料撰寫；未提供的成分、試驗數據、營養數值與產品功效不可自行編造。',
+      '5. 排版清楚、資訊層次分明，重要標題及商品名稱應清晰可讀。',
+      '6. 海報底部清楚加註：「本產品為食品，不能取代正常飲食與藥物治療」。',
+      '7. 若涉及活動價格與優惠條件，必須按輸入資料呈現，不自行增加折扣或限時承諾。');
+  }
+  return lines.join('\n');
+}
+function refresh(){
+  $('prompt').value=buildPrompt(state.tab==='full');
+  $('copyStatus').textContent='';
+}
+function switchType(type){
+  state.type=type;
+  $('campaignFields').classList.toggle('hidden',type!=='campaign');
+  $('singleFields').classList.toggle('hidden',type!=='single');
+  document.querySelectorAll('[data-type]').forEach(b=>b.classList.toggle('active',b.dataset.type===type));
+  refresh();
+}
+function switchTab(tab){
+  state.tab=tab;
+  document.querySelectorAll('[data-tab]').forEach(b=>{
+    const active=b.dataset.tab===tab;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));
+  });
+  $('tabTip').textContent=tab==='short'?'短版請先在 Gemini 輸入 / 點選 Skill，再貼上此提示詞。':'完整版可直接貼入 Gemini 或其他圖像生成 AI，不需先選擇 Skill。';
+  refresh();
+}
+async function copyPrompt(){
+  const text=$('prompt').value;
+  try{
+    if(navigator.clipboard && window.isSecureContext){await navigator.clipboard.writeText(text);}
+    else {
+      $('prompt').focus();$('prompt').select();
+      if(!document.execCommand('copy')) throw new Error('copy failed');
+      $('prompt').setSelectionRange(0,0);
+    }
+    $('copyStatus').textContent='✓ 提示詞已複製成功';
+  }catch(e){$('copyStatus').textContent='複製未成功，請點選文字框後使用 Ctrl+C 手動複製。';}
+}
+initProducts();
+document.querySelectorAll('[data-size]').forEach(b=>b.addEventListener('click',()=>{
+  state.size=b.dataset.size;
+  document.querySelectorAll('[data-size]').forEach(el=>el.classList.toggle('active',el===b));refresh();
+}));
+document.querySelectorAll('[data-type]').forEach(b=>b.addEventListener('click',()=>switchType(b.dataset.type)));
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+['style','campaignName','originalPrice','salePrice','singleProduct','infoType','extra'].forEach(id=>{
+  $(id).addEventListener('input',refresh);
+  $(id).addEventListener('change',refresh);
+});
+$('copyBtn').addEventListener('click',copyPrompt);
+$('prompt').addEventListener('input',()=>{$('copyStatus').textContent='';});
+refresh();
+</script>
+</body>
+</html>
